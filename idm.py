@@ -45,7 +45,7 @@ class IDMConn(object):
     IDMParentRoles='/IDMProv/rest/catalog/roles/parentRoles'
     IDMAssignRole='/IDMProv/rest/catalog/roles/role/assignments/assign'
     IDMRemoveRole='/IDMProv/rest/access/assignments/list'
-    IDMRoleAssignemets='/IDMProv/rest/catalog/roles/role/assignments/v2'
+    IDMRoleAssignments='/IDMProv/rest/catalog/roles/role/assignments/v2'
 
     """
     Approval
@@ -804,7 +804,10 @@ class IDMConn(object):
                 tmpRoleData['id'] = tmpRole['id']
                 tmpRoleData['requestDescription'] = Comment
                 rolesToAdd.append(tmpRoleData)
-    
+
+        if len(rolesToAdd) == 0:
+            raise ValueError('Está intentando asignar roles que no existen')   
+        
         role = {}
         role['roleId'] = RoleID
         role['subRoles'] = rolesToAdd
@@ -854,6 +857,9 @@ class IDMConn(object):
                 tmpRoleData['id'] = tmpRole['id']
                 tmpRoleData['requestDescription'] = Comment
                 rolesToRemove.append(tmpRoleData)
+
+        if len(rolesToRemove) == 0:
+            raise ValueError('Está intentando asignar roles que no existen')   
     
         role = {}
         role['roleId'] = RoleID
@@ -943,6 +949,9 @@ class IDMConn(object):
                 tmpRoleData['id'] = tmpRole['id']
                 tmpRoleData['requestDescription'] = Comment
                 rolesToAdd.append(tmpRoleData)
+
+        if len(rolesToAdd) == 0:
+            raise ValueError('Está intentando asignar roles que no existen')    
     
         role = {}
         role['roleId'] = RoleID
@@ -993,6 +1002,9 @@ class IDMConn(object):
                 tmpRoleData['requestDescription'] = Comment
                 rolesToRemove.append(tmpRoleData)
     
+        if len(rolesToRemove) == 0:
+            raise ValueError('Está intentando asignar roles que no existen')
+        
         role = {}
         role['roleId'] = RoleID
         role['parentRoles'] = rolesToRemove
@@ -1013,7 +1025,7 @@ class IDMConn(object):
         return []
     
 
-    def getRoleAssignemets(self, RoleID: str):
+    def getRoleAssignments(self, RoleID: str):
         """
         Get Users assigned to a role
         """
@@ -1037,7 +1049,7 @@ class IDMConn(object):
         Role = {}
         Role['dn'] = RoleID
 
-        assignementsURL = self.IDMBaseUrl + self.IDMRoleAssignemets + '?q=&sortOrder=asc&sortBy=name&size=250'
+        assignementsURL = self.IDMBaseUrl + self.IDMRoleAssignments + '?q=&sortOrder=asc&sortBy=name&size=250'
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + self.IDMToken
@@ -1071,26 +1083,26 @@ class IDMConn(object):
 
         if 'id' not in RoleInfo:
             raise ValueError('Imposible asignar usuarios a un rol que no existe')
-        
-        usersToAdd = []
 
         if len(UsersDn) == 0:
             raise ValueError('Debe indicar un set de usuarios')
 
         # recipientDn
 
-        alreadyAssignedJson = self.getRoleAssignemets(RoleID)
+        alreadyAssignedJson = self.getRoleAssignments(RoleID)
         alreadyAssigned = []
         for tmpRole in alreadyAssignedJson:
             alreadyAssigned.append(tmpRole['recipientDn'])
 
-        tmpUsrToAdd = []
-        for usr in alreadyAssigned:
-            if usr not in UsersDn:
-                tmpUsrToAdd.append(usr)
+        tmpUsrToAddArr = []
 
+        for tmpUsrToAdd in UsersDn:
+            if tmpUsrToAdd not in alreadyAssigned:
+                tmpUsrToAddArr.append(tmpUsrToAdd)
 
-        for user in tmpUsrToAdd:
+        usersToAdd = []
+
+        for user in tmpUsrToAddArr:
             tmpUsr = self.getUserByDN(user)
             if 'dn' in tmpUsr:
                 tmpUsrD = {}
@@ -1098,16 +1110,20 @@ class IDMConn(object):
                 tmpUsrD['subtype'] = 'user'
                 usersToAdd.append(tmpUsrD)
 
+        if len(usersToAdd) == 0:
+            raise ValueError('Los usuarios que intenta asignar no existen')
+        
         assignments = []
         assignment = {}
         assignment['id'] = RoleID
         assignment['assignmentToList'] = usersToAdd
-        # assignment['effectiveDate'] = str(int(EffectiveDate.timestamp()))
-        # if EndDate != None:
-        #     if EffectiveDate < EndDate:
-        #         assignment['expiryDate'] = str(int(EndDate.timestamp()))
-        #     else:
-        #         raise ValueError('la fecha de retiro debe ser mayor a la fecha de asignacion')
+
+        assignment['effectiveDate'] = str(int(EffectiveDate.timestamp() * 1000))
+        if EndDate != None:
+            if EffectiveDate < EndDate:
+                assignment['expiryDate'] = str(int(EndDate.timestamp() * 1000))
+            else:
+                raise ValueError('la fecha de retiro debe ser mayor a la fecha de asignacion')
         
         assignments.append(assignment)
         reqData = {}
@@ -1122,7 +1138,11 @@ class IDMConn(object):
         }
 
         response = requests.post(assignUrl, headers=headers, verify=False, data=reqData_json)
+        
+        print('reqData_json: ', reqData_json)
         print('response: ', response.text)
+
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('success') == 'true' ):
@@ -1150,30 +1170,35 @@ class IDMConn(object):
 
         if 'id' not in RoleInfo:
             raise ValueError('Imposible asignar usuarios a un rol que no existe')
-        
-        usersToRemove = []
 
         if len(UsersDn) == 0:
             raise ValueError('Debe indicar un set de usuarios')
         
 
-        alreadyAssignedJson = self.getRoleAssignemets(RoleID)
+        alreadyAssignedJson = self.getRoleAssignments(RoleID)
         alreadyAssigned = []
         for tmpRole in alreadyAssignedJson:
             alreadyAssigned.append(tmpRole['recipientDn'])
 
-        tmpUsrToRem = []
-        for usr in UsersDn:
-            if usr in alreadyAssigned:
-                tmpUsrToRem.append(usr)
-        
-        for user in tmpUsrToRem:
+
+        tmpUsrToRmArr = []
+
+        for tmpUsrToAdd in UsersDn:
+            if tmpUsrToAdd in alreadyAssigned:
+                tmpUsrToRmArr.append(tmpUsrToAdd)
+
+        usersToRemove = []
+
+        for user in tmpUsrToRmArr:
             tmpUsr = self.getUserByDN(user)
             if 'dn' in tmpUsr:
                 tmpUsrD = {}
                 tmpUsrD['assignedToDn'] = tmpUsr['dn']
                 tmpUsrD['subtype'] = 'user'
                 usersToRemove.append(tmpUsrD)
+
+        if len(usersToRemove) == 0:
+            raise ValueError('Los usuarios que intenta retirar no existen o no tienen asignado el rol')
 
         assignments = []
         assignment = {}
@@ -1194,7 +1219,7 @@ class IDMConn(object):
         }
 
         response = requests.delete(assignUrl, headers=headers, verify=False, data=reqData_json)
-        print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('success') == 'true' ):
