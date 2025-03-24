@@ -10,6 +10,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class IDMConn(object):
 
+
 #region vars
     """
     Base URL
@@ -69,7 +70,8 @@ class IDMConn(object):
     
 
 #endregion vars
-    
+
+
     def __init__(self, IDMBaseUrl, IDMBasicUser, IDMBasicPass, IDMWebUser, IDMWebPass):
         """
         Create the connection
@@ -79,6 +81,7 @@ class IDMConn(object):
         self.IDMBasicPass = IDMBasicPass
         self.IDMWebUser = IDMWebUser
         self.IDMWebPass = IDMWebPass
+
 
 #region Sessions
     
@@ -149,6 +152,7 @@ class IDMConn(object):
     
 #endregion Sessions
 
+
 #region Approval
 
     def getApprovalProcess(self, ApprovalName: str = '*', MaxSearch=10):
@@ -177,6 +181,7 @@ class IDMConn(object):
         return []
 
 #endregion Provision
+
 
 #region Roles
 
@@ -1237,6 +1242,7 @@ class IDMConn(object):
         return []
 
 #endregion Roles
+
 
 #region Users
 
