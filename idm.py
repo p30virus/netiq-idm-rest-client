@@ -58,6 +58,15 @@ class IDMConn(object):
     IDMUserSearch='/IDMProv/rest/access/users/list'
     IDMGetUSer='/IDMProv/rest/access/users/details'
 
+    """
+    Resources
+    """
+    IDMResourceSearch='/IDMProv/rest/catalog/resources/listV2'
+    IDMGetResource='/IDMProv/rest/catalog/resources/resourceV2'
+    IDMDrivers='/IDMProv/rest/catalog/drivers'
+    IDMDriversEntitlements='/IDMProv/rest/catalog/drivers/driver'
+    IDMDriversEntitlementsValues='/IDMProv/rest/catalog/drivers/entitlementValues/listV2'
+    
 
 #endregion vars
     
@@ -257,7 +266,7 @@ class IDMConn(object):
         return json.loads('{}')
     
 
-    def findRoleByName(self, RoleName: str, MaxSearch=500):
+    def findRoleByName(self, RoleName: str='*', MaxSearch=500):
         """
         Search role by Name or CN
         """
@@ -1231,7 +1240,7 @@ class IDMConn(object):
 
 #region Users
 
-    def findUserByCN(self, UserCN: str, MaxSearch=500):
+    def findUserByCN(self, UserCN: str ='*', MaxSearch=500):
         """
         Search users by the CN
         """
@@ -1292,3 +1301,173 @@ class IDMConn(object):
         return json.loads('{}')
 
 #endregion Users
+
+
+#region Resources
+
+    def findResourceByName(self, ResourceName: str='*', MaxSearch=500):
+        """
+        Search resource by Name
+        """
+        if( self.IDMToken == None ):
+            raise ValueError('Not Loged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+        
+        
+        #/IDMProv/rest/catalog/resources/listV2
+
+        searchUrl = self.IDMBaseUrl + self.IDMResourceSearch + '?sortOrder=asc&sortBy=name&size=' + str(MaxSearch) + '&q=' + ResourceName
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+
+        response = requests.get(searchUrl, headers=headers, verify=False)
+        if(response.status_code == 200):
+            # total
+            if ( response.json().get('total') > 0 ):
+                return response.json().get('resources')
+        return []
+    
+    def getResourceByID(self, ResourceID: str):
+        """
+        Get resource by ID or DN
+        """
+        if ResourceID == '':
+            raise ValueError('No es posible buscar un recurso con id en blanco')
+        
+        if( self.IDMToken == None ):
+            raise ValueError('Not Loged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        #/IDMProv/rest/catalog/resources/resourceV2
+
+        searchUrl = self.IDMBaseUrl + self.IDMGetResource
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        resources = {}
+        resource = {}
+        resource['id'] = ResourceID
+        resources['resources'] = resource
+
+        resources_json = json.dumps(resources)
+        response = requests.post(searchUrl, headers=headers, verify=False, data=resources_json)
+
+        if(response.status_code == 200):
+            # total
+            if ( response.json().get('arraySize') > 0 ):
+                role = response.json().get('resources')[0]
+                return role
+        return json.loads('{}')
+
+#endregion Resources
+
+
+#region Entitlements
+
+    def getDriversWithEntitlements(self):
+        """
+        Get all the drivers with config entitlements
+        """
+        if( self.IDMToken == None ):
+            raise ValueError('Not Loged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        searchUrl = self.IDMBaseUrl + self.IDMDrivers
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        
+        response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if(response.status_code == 200):
+            # total
+            if ( 'drivers' in response.json() ):
+                drivers = response.json().get('drivers')
+                return drivers
+        return json.loads('{}') 
+    
+
+    def getDriversEntitlements(self, DriverID: str='', ):
+        """
+        Get all the entitlements for a driver
+        """
+        if( self.IDMToken == None ):
+            raise ValueError('Not Loged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        if DriverID == '':
+            raise ValueError('No es posible driver con id en blanco')
+
+        searchUrl = self.IDMBaseUrl + self.IDMDriversEntitlements
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        
+        driver = {}
+        driver['id'] = DriverID
+        driver_json = json.dumps(driver)
+
+        response = requests.post(searchUrl, headers=headers, verify=False, data=driver_json)
+
+        if(response.status_code == 200):
+            # total
+            if ( 'entitlements' in response.json()):
+                drivers = response.json().get('entitlements')
+                return drivers
+        return json.loads('{}') 
+
+
+    def getEntitlementValues(self, EntitlemenID: str, Value: str = '*'):
+        """
+        Get entitlements avaliable values
+        """
+        if( self.IDMToken == None ):
+            raise ValueError('Not Loged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        if EntitlemenID == '':
+            raise ValueError('No es posible buscar un entitlement con id en blanco')
+        
+        # IDMDriversEntitlementsValues
+        
+
+        searchUrl = self.IDMBaseUrl + self.IDMDriversEntitlementsValues + '?query=' + Value
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        
+        ent = {}
+        ent['id'] = EntitlemenID
+        ent_json = json.dumps(ent)
+
+        response = requests.post(searchUrl, headers=headers, verify=False, data=ent_json)
+
+        if(response.status_code == 200):
+            # total
+            if ( 'entitlementValues' in response.json()):
+                drivers = response.json().get('entitlementValues')
+                return drivers
+        return json.loads('{}') 
+
+#endregion Entitlements
