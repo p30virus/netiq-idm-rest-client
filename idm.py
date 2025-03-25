@@ -74,7 +74,7 @@ class IDMConn(object):
 #endregion vars
 
 
-    def __init__(self, IDMBaseUrl, IDMBasicUser, IDMBasicPass, IDMWebUser, IDMWebPass, IDMDebug=False):
+    def __init__(self, IDMBaseUrl: str, IDMBasicUser: str, IDMBasicPass: str, IDMWebUser: str, IDMWebPass: str, IDMDebug: bool=False):
         """
         Create the connection
         """
