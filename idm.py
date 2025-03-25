@@ -400,7 +400,9 @@ class IDMConn(object):
         RoleInfo = {}
 
         for key in keysToMantain:
-            RoleInfo[key] = oldRoleInfo[key]
+            if key in oldRoleInfo:
+                RoleInfo[key] = oldRoleInfo[key]
+
 
         RoleInfo['name'] = RoleName
 
@@ -450,7 +452,9 @@ class IDMConn(object):
         RoleInfo = {}
 
         for key in keysToMantain:
-            RoleInfo[key] = oldRoleInfo[key]
+            if key in oldRoleInfo:
+                RoleInfo[key] = oldRoleInfo[key]
+
 
         RoleInfo['description'] = RoleDesc
 
@@ -500,7 +504,9 @@ class IDMConn(object):
         RoleInfo = {}
 
         for key in keysToMantain:
-            RoleInfo[key] = oldRoleInfo[key]
+            if key in oldRoleInfo:
+                RoleInfo[key] = oldRoleInfo[key]
+
 
         RoleInfo['name'] = RoleName
 
@@ -555,8 +561,11 @@ class IDMConn(object):
         RoleInfo = {}
 
         for key in keysToMantain:
-            RoleInfo[key] = oldRoleInfo[key]
+            if key in oldRoleInfo:
+                RoleInfo[key] = oldRoleInfo[key]
 
+        if 'owners' not in RoleInfo:
+            RoleInfo['owners'] = []
         
         for owner in NewRoleOwnersID:
             ownerExist = self.getUserByDN(owner)
@@ -613,7 +622,11 @@ class IDMConn(object):
         RoleInfo = {}
 
         for key in keysToMantain:
-            RoleInfo[key] = oldRoleInfo[key]
+            if key in oldRoleInfo:
+                RoleInfo[key] = oldRoleInfo[key]
+
+        if 'owners' not in RoleInfo:
+            RoleInfo['owners'] = []
 
         currOwners = RoleInfo['owners']
         newOwners = []
@@ -636,6 +649,8 @@ class IDMConn(object):
         }
 
         response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
+
+        
 
         if(response.status_code == 200):
             if response.json().get('success') == 'true':
@@ -682,6 +697,7 @@ class IDMConn(object):
         for key in keysToMantain:
             if key in oldRoleInfo:
                 RoleInfo[key] = oldRoleInfo[key]
+
 
         if RoleApprovalName != '' and RoleApprovalName != None:
             RoleInfo['approvalIsStandard'] = False
@@ -1152,9 +1168,6 @@ class IDMConn(object):
         }
 
         response = requests.post(assignUrl, headers=headers, verify=False, data=reqData_json)
-        
-        print('reqData_json: ', reqData_json)
-        print('response: ', response.text)
 
 
         if(response.status_code == 200):
