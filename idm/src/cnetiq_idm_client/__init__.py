@@ -100,7 +100,7 @@ class IDMConn(object):
         data = 'grant_type=password&username=' + self.IDMWebUser + '&password=' + self.IDMWebPass
         response = requests.post(loginUrl, data=data, headers=headers, auth=auth, verify=False)
         if(response.status_code == 200):
-            if (response.json().get('access_token')):
+            if ( 'access_token' in response.json() ):
                 self.IDMToken = response.json().get('access_token')
                 self.IDMRefreshToken = response.json().get('refresh_token')
                 expiredIn = response.json().get('expires_in')
@@ -128,7 +128,7 @@ class IDMConn(object):
         data = 'grant_type=refresh_token&username=' + self.IDMWebUser + '&password=' + self.IDMWebPass + '&refresh_token=' + self.IDMRefreshToken
         response = requests.post(loginUrl, data=data, headers=headers, auth=auth, verify=False)
         if(response.status_code == 200):
-            if (response.json().get('access_token')):
+            if ( 'access_token' in response.json() ):
                 self.IDMToken = response.json().get('access_token')
                 if self.IDMDebug == True:
                     print('token: ', self.IDMToken)
@@ -187,7 +187,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('requestDefs')):
+            if ( 'requestDefs' in response.json() ):
                 return response.json().get('requestDefs')
         return []
 
@@ -221,7 +221,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('arraySize') > 0 ):
+            if ( 'categories' in response.json() ):
                 return response.json().get('categories')
         return []
     
@@ -292,7 +292,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('arraySize') > 0 ):
+            if ( 'roles' in response.json() ):
                 role = response.json().get('roles')[0]
                 return role
         return json.loads('{}')
@@ -324,7 +324,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('total') > 0 ):
+            if ( 'roles' in response.json() ):
                 return response.json().get('roles')
             
         return []
@@ -465,7 +465,7 @@ class IDMConn(object):
             print('response: ', response.text)
 
         if(response.status_code == 200):
-            if response.json().get('success') == 'true':
+            if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
                 raise ValueError('Algo salio mal', response.json())
@@ -522,7 +522,7 @@ class IDMConn(object):
             print('response: ', response.text)
 
         if(response.status_code == 200):
-            if response.json().get('success') == 'true':
+            if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
                 raise ValueError('Algo salio mal', response.json())
@@ -584,7 +584,7 @@ class IDMConn(object):
             print('response: ', response.text)
 
         if(response.status_code == 200):
-            if response.json().get('success') == 'true':
+            if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
                 raise ValueError('Algo salio mal', response.json())
@@ -650,7 +650,7 @@ class IDMConn(object):
             print('response: ', response.text)
 
         if(response.status_code == 200):
-            if response.json().get('success') == 'true':
+            if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
                 raise ValueError('Algo salio mal', response.json())
@@ -713,7 +713,7 @@ class IDMConn(object):
             print('response: ', response.text)
 
         if(response.status_code == 200):
-            if response.json().get('success') == 'true':
+            if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
                 raise ValueError('Algo salio mal', response.json())
@@ -789,7 +789,7 @@ class IDMConn(object):
             print('response: ', response.text)
 
         if(response.status_code == 200):
-            if response.json().get('success') == 'true':
+            if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
                 raise ValueError('Algo salio mal', response.json())
@@ -833,7 +833,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('success') == 'true' ):
+            if ( 'succeeded' in response.json() ):
                 role = response.json().get('succeeded')
                 return role
         return json.loads('{}')
@@ -878,7 +878,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('arraySize') > 0 ):
+            if ( 'roles' in response.json() ):
                 childRoles = response.json().get('roles')
                 return childRoles
         return []
@@ -936,7 +936,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('success') == 'true' ):
+            if ( 'succeeded' in response.json() ):
                 childRoles = response.json().get('succeeded')
                 return childRoles
         return []
@@ -994,7 +994,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('success') == 'true' ):
+            if ( 'succeeded' in response.json() ):
                 childRoles = response.json().get('succeeded')
                 return childRoles
         return []
@@ -1039,7 +1039,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('arraySize') > 0 ):
+            if ( 'roles' in response.json() ):
                 childRoles = response.json().get('roles')
                 return childRoles
         return []
@@ -1097,7 +1097,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('success') == 'true' ):
+            if ( 'succeeded' in response.json() ):
                 parentRoles = response.json().get('succeeded')
                 return parentRoles
         return []
@@ -1155,7 +1155,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('success') == 'true' ):
+            if ( 'succeeded' in response.json() ):
                 parentRoles = response.json().get('succeeded')
                 return parentRoles
         return []
@@ -1201,7 +1201,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('total') > 0 ):
+            if ( 'assignmentStatusList' in response.json() ):
                 assigned = response.json().get('assignmentStatusList')
                 return assigned
         return []
@@ -1289,7 +1289,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('success') == 'true' ):
+            if ( 'succeeded' in response.json() ):
                 assigned = response.json().get('succeeded')
                 return assigned
         return []
@@ -1371,7 +1371,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('success') == 'true' ):
+            if ( 'succeeded' in response.json() ):
                 assigned = response.json().get('succeeded')
                 return assigned
         return []
@@ -1413,7 +1413,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('totalSize') > 0 ):
+            if ( 'usersList' in response.json() ):
                 return response.json().get('usersList')
             
         return []
@@ -1484,7 +1484,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('total') > 0 ):
+            if ( 'resources' in response.json() ):
                 return response.json().get('resources')
         return []
     
@@ -1524,7 +1524,7 @@ class IDMConn(object):
 
         if(response.status_code == 200):
             # total
-            if ( response.json().get('arraySize') > 0 ):
+            if ( 'resources' in response.json() ):
                 role = response.json().get('resources')[0]
                 return role
         return json.loads('{}')
