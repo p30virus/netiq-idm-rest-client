@@ -6,7 +6,7 @@
 
 ## Documentacion de la API REST
 
-https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/
+[NetID: REST API Documentation](https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/)
 
 ## Registrar un usuario como cliente OAUTH
 
@@ -29,7 +29,7 @@ com.netiq.<clientid>.clientPass._attr_obscurity = ENCRYPT
 com.netiq.<clientid>.clientPass = <cmd-output>
 ```
 
-https://community.opentext.com/cybersec/idm/w/tips/14597/identity-applications-and-osp-rest-api-via-curl-and-jq
+[OpenText Community: Identity Applications REST API via curl and jq](https://community.opentext.com/cybersec/idm/w/tips/14597/identity-applications-and-osp-rest-api-via-curl-and-jq)
 
 ## Info
 
