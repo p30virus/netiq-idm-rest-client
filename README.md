@@ -3,14 +3,16 @@
 * Python 3.13.2
 * Librerias:
   * request (python -m pip install requests)
+* Recomendados:
+  * VSCode
 
-## Documentacion de la API REST
+## Documentación de la API REST
 
 [NetIQ: REST API Documentation](https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/)
 
 ## Registrar un usuario como cliente OAUTH
 
-En el archivo ism-configurations.properties
+En el archivo ***ism-configurations.properties***
 
 ```properties
 com.netiq.<clientid>.clientID = <clientid>
@@ -33,8 +35,8 @@ com.netiq.<clientid>.clientPass = <cmd-output>
 
 ## Info
 
-* config.ini - Archivo donde se pueden definir los parámetros de conexión si se requiere para ser leidos con la libreria configparser (Ex: Ejemplo de llamados.ipynb)
-* idm.py - librería con la clase IDMConn que permite los llamados a las API Web
+* ***config.ini*** - Archivo donde se pueden definir los parámetros de conexión si se requiere para ser leidos con la libreria configparser (Ex: Ejemplo de llamados.ipynb)
+* ***idm.py*** - librería con la clase ***IDMConn*** que permite los llamados a las API REST
 
   * Autenticación
 
