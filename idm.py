@@ -11,6 +11,10 @@ class IDMConn(object):
 
 #region vars
     """
+    DEBUG
+    """
+    IDMDebug=False
+    """
     Base URL
     """
     IDMBaseUrl=None
@@ -70,7 +74,7 @@ class IDMConn(object):
 #endregion vars
 
 
-    def __init__(self, IDMBaseUrl, IDMBasicUser, IDMBasicPass, IDMWebUser, IDMWebPass):
+    def __init__(self, IDMBaseUrl, IDMBasicUser, IDMBasicPass, IDMWebUser, IDMWebPass, IDMDebug=False):
         """
         Create the connection
         """
@@ -79,6 +83,7 @@ class IDMConn(object):
         self.IDMBasicPass = IDMBasicPass
         self.IDMWebUser = IDMWebUser
         self.IDMWebPass = IDMWebPass
+        self.IDMDebug = IDMDebug
 
 
 #region Sessions
@@ -101,6 +106,8 @@ class IDMConn(object):
                 expiredIn = response.json().get('expires_in')
                 currTime = datetime.datetime.now()
                 self.IDMTokenExpires = currTime + datetime.timedelta(seconds=expiredIn)
+                if self.IDMDebug == True:
+                    print('token: ', self.IDMToken)
                 return True
         return False
     
@@ -123,6 +130,8 @@ class IDMConn(object):
         if(response.status_code == 200):
             if (response.json().get('access_token')):
                 self.IDMToken = response.json().get('access_token')
+                if self.IDMDebug == True:
+                    print('token: ', self.IDMToken)
                 return True
         return False
     
@@ -172,6 +181,10 @@ class IDMConn(object):
         }
         
         response = requests.get(wfUrl, headers=headers, verify=False)
+        if self.IDMDebug == True:
+            print('URL: ', wfUrl)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('requestDefs')):
@@ -201,6 +214,11 @@ class IDMConn(object):
         }
 
         response = requests.get(catUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', catUrl)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('arraySize') > 0 ):
@@ -229,6 +247,12 @@ class IDMConn(object):
             'Authorization': 'Bearer ' + self.IDMToken
         }
         response = requests.post(contUrl, headers=headers, verify=False, data=level_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', contUrl)
+            print('json: ', level_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             return response.json().get('subContainers')
         return
@@ -261,6 +285,11 @@ class IDMConn(object):
         roles_json = json.dumps(roles)
         response = requests.post(searchUrl, headers=headers, verify=False, data=roles_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('arraySize') > 0 ):
@@ -288,6 +317,11 @@ class IDMConn(object):
         }
 
         response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('total') > 0 ):
@@ -372,6 +406,11 @@ class IDMConn(object):
 
         response = requests.post(addRoleUrl, headers=headers, verify=False, data=role_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', addRoleUrl)
+            print('json: ', role_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             return response.json()
         else:
@@ -419,6 +458,11 @@ class IDMConn(object):
         roles_json = json.dumps(roles)
 
         response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             if response.json().get('success') == 'true':
@@ -471,6 +515,11 @@ class IDMConn(object):
         roles_json = json.dumps(roles)
 
         response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             if response.json().get('success') == 'true':
@@ -528,6 +577,11 @@ class IDMConn(object):
         roles_json = json.dumps(roles)
 
         response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             if response.json().get('success') == 'true':
@@ -590,6 +644,11 @@ class IDMConn(object):
 
         response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             if response.json().get('success') == 'true':
                 return response.json().get('succeeded')
@@ -648,7 +707,10 @@ class IDMConn(object):
 
         response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
 
-        
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             if response.json().get('success') == 'true':
@@ -721,6 +783,11 @@ class IDMConn(object):
 
         response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             if response.json().get('success') == 'true':
                 return response.json().get('succeeded')
@@ -757,6 +824,13 @@ class IDMConn(object):
         roles_json = json.dumps(roles)
 
         response = requests.delete(deleteUrl, headers=headers, verify=False, data=roles_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', deleteUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
+
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('success') == 'true' ):
@@ -796,6 +870,12 @@ class IDMConn(object):
         role['id'] = RoleID
         role_json = json.dumps(role)
         response = requests.post(childUrl, headers=headers, verify=False, data=role_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', childUrl)
+            print('json: ', role_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('arraySize') > 0 ):
@@ -848,6 +928,11 @@ class IDMConn(object):
 
         role_json = json.dumps(role)
         response = requests.post(childUrl, headers=headers, verify=False, data=role_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', childUrl)
+            print('json: ', role_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             # total
@@ -902,6 +987,11 @@ class IDMConn(object):
         role_json = json.dumps(role)
         response = requests.delete(childUrl, headers=headers, verify=False, data=role_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', childUrl)
+            print('json: ', role_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('success') == 'true' ):
@@ -941,6 +1031,12 @@ class IDMConn(object):
         role['id'] = RoleID
         role_json = json.dumps(role)
         response = requests.post(childUrl, headers=headers, verify=False, data=role_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', childUrl)
+            print('json: ', role_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('arraySize') > 0 ):
@@ -993,6 +1089,12 @@ class IDMConn(object):
 
         role_json = json.dumps(role)
         response = requests.post(childUrl, headers=headers, verify=False, data=role_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', childUrl)
+            print('json: ', role_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('success') == 'true' ):
@@ -1045,6 +1147,12 @@ class IDMConn(object):
 
         role_json = json.dumps(role)
         response = requests.delete(childUrl, headers=headers, verify=False, data=role_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', childUrl)
+            print('json: ', role_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('success') == 'true' ):
@@ -1084,6 +1192,13 @@ class IDMConn(object):
         }
         role_json = json.dumps(Role)
         response = requests.post(assignementsURL, headers=headers, verify=False, data=role_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', assignementsURL)
+            print('json: ', role_json)
+            print('response: ', response.text)
+
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('total') > 0 ):
@@ -1167,6 +1282,10 @@ class IDMConn(object):
 
         response = requests.post(assignUrl, headers=headers, verify=False, data=reqData_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', assignUrl)
+            print('json: ', reqData_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             # total
@@ -1245,6 +1364,11 @@ class IDMConn(object):
 
         response = requests.delete(assignUrl, headers=headers, verify=False, data=reqData_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', assignUrl)
+            print('json: ', reqData_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('success') == 'true' ):
@@ -1283,6 +1407,10 @@ class IDMConn(object):
         }
         response = requests.get(searchUrl, headers=headers, verify=False)
 
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('totalSize') > 0 ):
@@ -1313,6 +1441,10 @@ class IDMConn(object):
         }
 
         response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             user = response.json()
@@ -1345,6 +1477,11 @@ class IDMConn(object):
         }
 
         response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('total') > 0 ):
@@ -1380,6 +1517,11 @@ class IDMConn(object):
         resources_json = json.dumps(resources)
         response = requests.post(searchUrl, headers=headers, verify=False, data=resources_json)
 
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('resources_json: ', resources_json)
+            print('response: ', response.text)
+
         if(response.status_code == 200):
             # total
             if ( response.json().get('arraySize') > 0 ):
@@ -1410,6 +1552,10 @@ class IDMConn(object):
         }
         
         response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             # total
@@ -1444,6 +1590,11 @@ class IDMConn(object):
         driver_json = json.dumps(driver)
 
         response = requests.post(searchUrl, headers=headers, verify=False, data=driver_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('driver_json: ', driver_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             # total
@@ -1481,6 +1632,11 @@ class IDMConn(object):
         ent_json = json.dumps(ent)
 
         response = requests.post(searchUrl, headers=headers, verify=False, data=ent_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('ent_json: ', ent_json)
+            print('response: ', response.text)
 
         if(response.status_code == 200):
             # total
