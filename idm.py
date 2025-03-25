@@ -1,5 +1,3 @@
-import pandas as pd
-import http
 from requests.auth import HTTPBasicAuth
 import requests
 import json
@@ -155,7 +153,7 @@ class IDMConn(object):
 
 #region Approval
 
-    def getApprovalProcess(self, ApprovalName: str = '*', MaxSearch=10):
+    def searchApprovalProcess(self, ApprovalName: str = '*', MaxSearch=10):
         """
         Get Role Approval(WF)
         """
