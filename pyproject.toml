@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "humans"
+version = "0.0.1"
+authors = [
+  { name="Mariya Sha", email="mariya@pythonsimplified.org" },
+]
+description = "collection of biblical humans and their family relations"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/p30virus/neit-idm-rest-client"
+Issues = "https://github.com/p30virus/neit-idm-rest-client"

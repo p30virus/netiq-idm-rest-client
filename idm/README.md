@@ -6,12 +6,6 @@
 * Recomendados:
   * VSCode
 
-## Instalación
-
-```
-pip install -i https://test.pypi.org/simple/ cnetiq-idm-client==0.0.1
-```
-
 ## Documentación de la API REST
 
 [NetIQ: REST API Documentation](https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/)
