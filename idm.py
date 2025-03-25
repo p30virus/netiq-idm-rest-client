@@ -1246,7 +1246,7 @@ class IDMConn(object):
 
 #region Users
 
-    def findUserByCN(self, UserCN: str ='*', MaxSearch=500):
+    def findUser(self, UserCN: str ='*', MaxSearch=500, FilterAttrs: list[str] = ['CN', 'FirstName', 'LastName', 'Email', 'TelephoneNumber']):
         """
         Search users by the CN
         """
@@ -1260,14 +1260,16 @@ class IDMConn(object):
         if UserCN == '':
             raise ValueError('Debe especificar un CN de usuario')
         
-        #?q=deville&clientId=1&nextIndex=1&size=25&sortOrder=asc&sortBy=&searchAttr=FirstName,LastName,Email,TelephoneNumber,CN&advSearch=
+        attrs = 'CN'
+        if len(FilterAttrs) > 1:
+            attrs = ','.join(FilterAttrs)
         
-        searchUrl = self.IDMBaseUrl + self.IDMUserSearch + '?sortOrder=asc&sortBy=name&searchAttr=CN&' + UserCN + '&size=' + str(MaxSearch) + '&advSearch='
+        
+        searchUrl = self.IDMBaseUrl + self.IDMUserSearch + '?q=' + UserCN + '&sortOrder=asc&sortBy=name&searchAttr=' + attrs + '&size=' + str(MaxSearch) + '&advSearch='
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + self.IDMToken
         }
-
         response = requests.get(searchUrl, headers=headers, verify=False)
 
         if(response.status_code == 200):
