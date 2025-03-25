@@ -6,7 +6,7 @@
 
 ## Documentacion de la API REST
 
-[NetID: REST API Documentation](https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/)
+[NetIQ: REST API Documentation](https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/)
 
 ## Registrar un usuario como cliente OAUTH
 
@@ -33,36 +33,43 @@ com.netiq.<clientid>.clientPass = <cmd-output>
 
 ## Info
 
-* config.ini - Archivo donde se pueden definir los parametros de conexion si se requiere
-* idm.py - libreria con la clase IDMConn que permite los llamados a las API Web
-  * Autenticacion
+* config.ini - Archivo donde se pueden definir los parámetros de conexión si se requiere para ser leidos con la libreria configparser (Ex: Ejemplo de llamados.ipynb)
+* idm.py - librería con la clase IDMConn que permite los llamados a las API Web
+
+  * Autenticación
+
     * Login
     * Refresh token
     * Logout
   * Usuario:
-    * Busqueda de usuarios
-    * Obtener informacion del usuario
+
+    * Búsqueda de usuarios
+    * Obtener información del usuario
   * Recursos
+
     * Buscar recursos
-    * Obtener informacion del recurso
+    * Obtener información del recurso
   * Entitlements
+
     * Obtener los drivers que tienene entitlements
     * Obtener entitlements asociados a los drivers
     * Obtener los valores asociados a un entitlement
   * Flujos
-    * Buscar flujos de aprobacion
+
+    * Buscar flujos de aprobación
   * Roles
-    * Obtener categorias disponibles
-    * Obtner contenedores disponibles
-    * Obtener informacion de un rol
+
+    * Obtener categorías disponibles
+    * Obtener contenedores disponibles
+    * Obtener información de un rol
     * Buscar roles
     * Crear rol
-    * Actualizar Nombre de un rol
-    * Actualizar Descripcion de un rol
-    * Actualizar nombre y descripcion de un rol
+    * Actualizar nombre de un rol
+    * Actualizar descripción de un rol
+    * Actualizar nombre y descripción de un rol
     * Agregar dueños de un rol
     * Retirar dueños de un rol
-    * Asignar flujo de aprobacion
+    * Asignar flujo de aprobación
     * Borrar rol
     * Obtener roles hijos
     * Asignar roles hijos
