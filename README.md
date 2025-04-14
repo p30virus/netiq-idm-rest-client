@@ -9,7 +9,7 @@
 ## Instalación
 
 ```
-pip install -i https://test.pypi.org/simple/ cnetiq-idm-client==0.0.1
+pip install -i https://test.pypi.org/simple/ cnetiq-idm-client==0.0.1.2
 ```
 
 ## Documentación de la API REST
@@ -88,3 +88,19 @@ com.netiq.<clientid>.clientPass = <cmd-output>
     * Obtener miembros del rol
     * Asignar miembros a un rol (Usuarios)
     * Retirar miembros a un rol (Usuarios)
+
+## Como usarlo
+
+### Buscar un rol
+
+
+```
+from cnetiq_idm_client import  IDMConn
+
+idmConn = IDMConn('https://myidm.examlple.com', 'custom-clientid', 'custom-secret', 'uaadmin', 'uaadmin-pass')
+
+idmConn.Login()
+role = idmConn.findRoleByName("child*")
+roleF = idmConn.getRoleByID(role[0]['id'])
+idmConn.Logout()
+```

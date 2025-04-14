@@ -168,7 +168,7 @@ class IDMConn(object):
         """
         # ?q=*&size=5&nextIndex=1&processType=Role%20Approval
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -201,7 +201,7 @@ class IDMConn(object):
         Get available role categories
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -231,7 +231,7 @@ class IDMConn(object):
         Get available role containers by level
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -266,7 +266,7 @@ class IDMConn(object):
             raise ValueError('No es posible buscar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -303,7 +303,7 @@ class IDMConn(object):
         Search role by Name or CN
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -337,7 +337,7 @@ class IDMConn(object):
         if(RoleID == '' or RoleName == '' or RoleDesc == '' ):
             raise ValueError('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -426,7 +426,7 @@ class IDMConn(object):
         if(RoleID == '' or RoleName == '' ):
             raise ValueError('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -483,7 +483,7 @@ class IDMConn(object):
         if(RoleID == '' or RoleDesc == '' ):
             raise ValueError('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -540,7 +540,7 @@ class IDMConn(object):
         if(RoleID == '' or RoleName == '' or RoleDesc == '' ):
             raise ValueError('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -602,7 +602,7 @@ class IDMConn(object):
         if(RoleID == ''):
             raise ValueError('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -668,7 +668,7 @@ class IDMConn(object):
         if(RoleID == ''):
             raise ValueError('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -726,7 +726,7 @@ class IDMConn(object):
         if(RoleID == ''):
             raise ValueError('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -738,9 +738,9 @@ class IDMConn(object):
         approvalWFID = ''
 
         if RoleApprovalName != '' and RoleApprovalName != None:
-            approvalExist = self.getApprovalProcess(RoleApprovalName)
+            approvalExist = self.searchApprovalProcess(RoleApprovalName)
             if len(approvalExist) == 0:
-                raise ValueError('No se encuentra el proceso de approvacion')
+                raise ValueError('No se encuentra el proceso de aprobacion')
             found = False
             for item in approvalExist:
                 if item['name'] == RoleApprovalName:
@@ -748,7 +748,7 @@ class IDMConn(object):
                     approvalWFID = item['id']
                     break
             if found == False:
-                raise ValueError('No se encuentra el proceso de approvacion')
+                raise ValueError('No se encuentra el proceso de aprobacion')
 
         oldRoleInfo = self.getRoleByID(RoleID)
 
@@ -805,7 +805,7 @@ class IDMConn(object):
             raise ValueError('No es posible borrar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -847,7 +847,7 @@ class IDMConn(object):
             raise ValueError('No es posible obtener un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -892,7 +892,7 @@ class IDMConn(object):
             raise ValueError('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -950,7 +950,7 @@ class IDMConn(object):
             raise ValueError('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1008,7 +1008,7 @@ class IDMConn(object):
             raise ValueError('No es posible obtener un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1053,7 +1053,7 @@ class IDMConn(object):
             raise ValueError('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1111,7 +1111,7 @@ class IDMConn(object):
             raise ValueError('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1171,7 +1171,7 @@ class IDMConn(object):
             raise ValueError('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1216,7 +1216,7 @@ class IDMConn(object):
             raise ValueError('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1297,14 +1297,14 @@ class IDMConn(object):
 
     def removeRoleFromUsers(self, RoleID: str, UsersDn: list[str] = [], Comment: str = 'Default comment'):
         """
-        Assign a role to users
+        Remove role from users
         """
 
         if RoleID == '':
             raise ValueError('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1313,7 +1313,7 @@ class IDMConn(object):
         RoleInfo = self.getRoleByID(RoleID)
 
         if 'id' not in RoleInfo:
-            raise ValueError('Imposible asignar usuarios a un rol que no existe')
+            raise ValueError('Imposible retirar usuarios a un rol que no existe')
 
         if len(UsersDn) == 0:
             raise ValueError('Debe indicar un set de usuarios')
@@ -1386,7 +1386,7 @@ class IDMConn(object):
         Search users by the CN
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1427,7 +1427,7 @@ class IDMConn(object):
             raise ValueError('No es posible buscar un usuario con dn en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1461,7 +1461,7 @@ class IDMConn(object):
         Search resource by Name
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1496,7 +1496,7 @@ class IDMConn(object):
             raise ValueError('No es posible buscar un recurso con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1539,7 +1539,7 @@ class IDMConn(object):
         Get all the drivers with config entitlements
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1570,7 +1570,7 @@ class IDMConn(object):
         Get all the entitlements for a driver
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1609,7 +1609,7 @@ class IDMConn(object):
         Get entitlements avaliable values
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Loged In')
+            raise ValueError('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
