@@ -9,7 +9,7 @@
 ## Instalación
 
 ```
-pip install -i https://test.pypi.org/simple/ cnetiq-idm-client==0.0.1.2
+pip install -i https://test.pypi.org/simple/ cnetiq-idm-client
 ```
 
 ## Documentación de la API REST
