@@ -23,8 +23,8 @@ class IDMConn(object):
     """
     Session
     """
-    IDMBasicUser=None
-    IDMBasicPass=None
+    IDMClientID=None
+    IDMClientSecret=None
     IDMWebUser=None
     IDMWebPass=None
     IDMTokenExpires=None
@@ -75,16 +75,38 @@ class IDMConn(object):
 #endregion vars
 
 
-    def __init__(self, IDMBaseUrl: str, IDMBasicUser: str, IDMBasicPass: str, IDMWebUser: str, IDMWebPass: str, IDMDebug: bool=False):
+    def __init__(self, IDMBaseUrl: str, IDMClientID: str, IDMClientSecret: str, IDMWebUser: str, IDMWebPass: str, IDMDebug: bool=False):
         """
         Create the connection
         """
         self.IDMBaseUrl = IDMBaseUrl
-        self.IDMBasicUser = IDMBasicUser
-        self.IDMBasicPass = IDMBasicPass
+        self.IDMClientID = IDMClientID
+        self.IDMClientSecret = IDMClientSecret
         self.IDMWebUser = IDMWebUser
         self.IDMWebPass = IDMWebPass
         self.IDMDebug = IDMDebug
+
+    def __str__(self):
+        if self.IDMToken == None:
+            return f'Not logged in'
+        else:
+            return f'Logged in to {self.IDMBaseUrl} using {self.IDMClientID} and the user {self.IDMWebUser}'
+        
+    def __repr__(self):
+        if self.IDMToken == None:
+            return f'IDMConn(Not logged in)'
+        else:
+            return f'IDMConn(url={self.IDMBaseUrl}, ClientID={self.IDMClientID}, User={self.IDMWebUser}, Token={self.IDMToken}, RefreshToken={self.IDMRefreshToken}'
+        
+    def __enter__(self):
+        self.Login()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.Logout()
+        if exc_type:
+            raise ValueError('algo salio mal')
+        return True
 
 
 #region Sessions
@@ -94,7 +116,7 @@ class IDMConn(object):
         Login to the service - must be manually called
         """
         loginUrl = self.IDMBaseUrl + self.IDMLogin
-        auth = HTTPBasicAuth(self.IDMBasicUser, self.IDMBasicPass)
+        auth = HTTPBasicAuth(self.IDMClientID, self.IDMClientSecret)
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -122,7 +144,7 @@ class IDMConn(object):
             return False
         
         loginUrl = self.IDMBaseUrl + self.IDMLogin
-        auth = HTTPBasicAuth(self.IDMBasicUser, self.IDMBasicPass)
+        auth = HTTPBasicAuth(self.IDMClientID, self.IDMClientSecret)
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -152,6 +174,10 @@ class IDMConn(object):
             'Authorization': 'Bearer ' + self.IDMToken
         }
         response = requests.get(logoutUrl, headers=headers, verify=False)
+        
+        if self.IDMDebug == True:
+            print('Logout response: ', response.status_code)
+
         if(response.status_code == 200):
             self.IDMToken = None
             self.IDMRefreshToken = None
@@ -298,7 +324,7 @@ class IDMConn(object):
                 return role
         return json.loads('{}')
     
-    @deprecated(version='0.0.1.3.1', reason='Renombrada a searchRoleByName')
+    @deprecated('Renombrada a searchRoleByName')
     def findRoleByName(self, RoleName: str='*', MaxSearch=500):
         return self.searchResourceByName(RoleName, MaxSearch)
 
@@ -1385,7 +1411,7 @@ class IDMConn(object):
 
 #region Users
 
-    @deprecated(version='0.0.1.3.1', reason='Renombrada a searchUser')
+    @deprecated('Renombrada a searchUser')
     def findUser(self, UserCN: str ='*', MaxSearch=500, FilterAttrs: list[str] = ['CN', 'FirstName', 'LastName', 'Email', 'TelephoneNumber']):
         return self.searchUser(UserCN, MaxSearch, FilterAttrs)
 
@@ -1465,7 +1491,7 @@ class IDMConn(object):
 #region Resources
 
 
-    @deprecated(version='0.0.1.3.1', reason='Renombrada a searchResourceByName')
+    @deprecated('Renombrada a searchResourceByName')
     def findResourceByName(self, ResourceName: str='*', MaxSearch=500):
         return self.searchResourceByName(ResourceName, MaxSearch)
 

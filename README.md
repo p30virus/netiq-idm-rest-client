@@ -12,6 +12,12 @@
 pip install -i https://test.pypi.org/simple/ cnetiq-idm-client
 ```
 
+## Actualización
+
+```
+pip install --upgrade -i https://test.pypi.org/simple/ cnetiq-idm-client
+```
+
 ## Documentación de la API REST
 
 [NetIQ: REST API Documentation](https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/)
@@ -96,10 +102,27 @@ com.netiq.<clientid>.clientPass = <cmd-output>
 ```
 from cnetiq_idm_client import  IDMConn
 
-idmConn = IDMConn('https://myidm.examlple.com', 'custom-clientid', 'custom-secret', 'uaadmin', 'uaadmin-pass')
+idmConn = IDMConn('https://myidm.examlple.com', 'custom-clientid', 'custom-secret', 'uaadmin', 'uaadmin-pass', IDMDebug=True)
 
 idmConn.Login()
+
+print("idmConn: ",idmConn)
+print("rper : ",repr(idmConn))
+
 role = idmConn.findRoleByName("child*")
 roleF = idmConn.getRoleByID(role[0]['id'])
+
 idmConn.Logout()
+```
+
+```
+from cnetiq_idm_client import  IDMConn
+
+with IDMConn('https://myidm.examlple.com', 'custom-clientid', 'custom-secret', 'uaadmin', 'uaadmin-pass', IDMDebug=True) as idmConn:
+  print("idmConn: ",idmConn)
+  print("rper : ",repr(idmConn))
+
+  role = idmConn.findRoleByName("child*")
+  roleF = idmConn.getRoleByID(role[0]['id'])
+
 ```
