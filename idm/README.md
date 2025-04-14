@@ -6,6 +6,12 @@
 * Recomendados:
   * VSCode
 
+## Instalación
+
+```
+pip install -i https://test.pypi.org/simple/ cnetiq-idm-client==0.0.1.2
+```
+
 ## Documentación de la API REST
 
 [NetIQ: REST API Documentation](https://www.netiq.com/documentation/identity-manager-developer/rest-api-documentation/idmappsdoc/)
@@ -37,55 +43,55 @@ com.netiq.<clientid>.clientPass = <cmd-output>
 
 * ***config.ini*** - Archivo donde se pueden definir los parámetros de conexión si se requiere para ser leidos con la libreria configparser (Ex: Ejemplo de llamados.ipynb)
 * ***idm.py*** - librería con la clase ***IDMConn*** que permite los llamados a las API REST
+
   * Autenticación
 
-    * Login
-    * Refresh token
-    * Logout
+    * Login - ***Login***
+    * Refresh token - ***RefreshToken***
+    * Logout - ***Logout***
   * Usuario:
 
-    * Búsqueda de usuarios
-    * Obtener información del usuario
+    * Búsqueda de usuarios - ***searchUser***
+    * Obtener información del usuario - ***getUserByDN***
   * Recursos
 
-    * Buscar recursos
-    * Obtener información del recurso
+    * Buscar recursos - ***searchResourceByName***
+    * Obtener información del recurso - ***getResourceByID***
   * Entitlements
 
-    * Obtener los drivers que tienene entitlements
-    * Obtener entitlements asociados a los drivers
-    * Obtener los valores asociados a un entitlement
+    * Obtener los drivers que tienen entitlements - ***getDriversWithEntitlements***
+    * Obtener entitlements asociados a los drivers - ***getDriversEntitlements***
+    * Obtener los valores asociados a un entitlement - ***getEntitlementValues***
   * Flujos
 
-    * Buscar flujos de aprobación
+    * Buscar flujos de aprobación - ***searchApprovalProcess***
   * Roles
 
-    * Obtener categorías disponibles
-    * Obtener contenedores disponibles
-    * Obtener información de un rol
-    * Buscar roles
-    * Crear rol
-    * Actualizar nombre de un rol
-    * Actualizar descripción de un rol
-    * Actualizar nombre y descripción de un rol
-    * Agregar dueños de un rol
-    * Retirar dueños de un rol
-    * Asignar flujo de aprobación
-    * Borrar rol
-    * Obtener roles hijos
-    * Asignar roles hijos
-    * Retirar roles hijos
-    * Obtener padre hijos
-    * Asignar padre hijos
-    * Retirar padre hijos
-    * Obtener miembros del rol
-    * Asignar miembros a un rol (Usuarios)
-    * Retirar miembros a un rol (Usuarios)
+    * Obtener categorías disponibles - ***getRolesCategories***
+    * Obtener contenedores disponibles - ***getRolesContainers***
+    * Obtener información de un rol - ***getRoleByID***
+    * Buscar roles - ***searchRoleByName***
+    * Crear rol - ***createRole***
+    * Eliminar rol - ***deleteRoleByID***
+    * Actualizar nombre de un rol - ***updateRoleName***
+    * Actualizar descripción de un rol - ***updateRoleDesc***
+    * Actualizar nombre y descripción de un rol - ***updateRoleInfo***
+    * Agregar dueños de un rol - ***addRoleOwners***
+    * Retirar dueños de un rol - ***removeRoleOwners***
+    * Asignar flujo de aprobación - ***setRoleApproval***
+    * Obtener roles hijos - ***getChildRoles***
+    * Asignar roles hijos - ***addChildRoles***
+    * Retirar roles hijos - ***removeChildRoles***
+    * Obtener roles padre - ***getParentRoles***
+    * Asignar roles padre - ***addParentRoles***
+    * Retirar roles padre - ***removeParentRoles***
+    * Obtener miembros del rol - ***getRoleAssignments***
+    * Asignar miembros a un rol (Usuarios) - ***assignRoleToUsers***
+    * Retirar miembros a un rol (Usuarios) - ***removeRoleFromUsers***
 
 ## Como usarlo
 
 ### Buscar un rol
-
 
 ```
 from cnetiq_idm_client import  IDMConn

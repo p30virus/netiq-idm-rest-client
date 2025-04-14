@@ -1,2 +1,4 @@
 Custom/*
 idm/dist/*
+__pycache__/*
+idm/src/cnetiq_idm_client/__pycache__/*

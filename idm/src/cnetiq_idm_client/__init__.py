@@ -1,3 +1,4 @@
+from warnings import deprecated
 from requests.auth import HTTPBasicAuth
 import requests
 import json
@@ -297,8 +298,11 @@ class IDMConn(object):
                 return role
         return json.loads('{}')
     
-
+    @deprecated(version='0.0.1.3.1', reason='Renombrada a searchRoleByName')
     def findRoleByName(self, RoleName: str='*', MaxSearch=500):
+        return self.searchResourceByName(RoleName, MaxSearch)
+
+    def searchRoleByName(self, RoleName: str='*', MaxSearch=500):
         """
         Search role by Name or CN
         """
@@ -1381,7 +1385,11 @@ class IDMConn(object):
 
 #region Users
 
+    @deprecated(version='0.0.1.3.1', reason='Renombrada a searchUser')
     def findUser(self, UserCN: str ='*', MaxSearch=500, FilterAttrs: list[str] = ['CN', 'FirstName', 'LastName', 'Email', 'TelephoneNumber']):
+        return self.searchUser(UserCN, MaxSearch, FilterAttrs)
+
+    def searchUser(self, UserCN: str ='*', MaxSearch=500, FilterAttrs: list[str] = ['CN', 'FirstName', 'LastName', 'Email', 'TelephoneNumber']):
         """
         Search users by the CN
         """
@@ -1456,7 +1464,12 @@ class IDMConn(object):
 
 #region Resources
 
+
+    @deprecated(version='0.0.1.3.1', reason='Renombrada a searchResourceByName')
     def findResourceByName(self, ResourceName: str='*', MaxSearch=500):
+        return self.searchResourceByName(ResourceName, MaxSearch)
+
+    def searchResourceByName(self, ResourceName: str='*', MaxSearch=500):
         """
         Search resource by Name
         """
