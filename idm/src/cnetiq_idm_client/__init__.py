@@ -105,7 +105,7 @@ class IDMConn(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.Logout()
         if exc_type:
-            raise ValueError('algo salio mal')
+            raise Exception('algo salio mal')
         return True
 
 
@@ -195,7 +195,7 @@ class IDMConn(object):
         """
         # ?q=*&size=5&nextIndex=1&processType=Role%20Approval
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -228,7 +228,7 @@ class IDMConn(object):
         Get available role categories
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -258,7 +258,7 @@ class IDMConn(object):
         Get available role containers by level
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -290,10 +290,10 @@ class IDMConn(object):
         Get role by ID or DN
         """
         if RoleID == '':
-            raise ValueError('No es posible buscar un rol con id en blanco')
+            raise Exception('No es posible buscar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -333,7 +333,7 @@ class IDMConn(object):
         Search role by Name or CN
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -365,9 +365,9 @@ class IDMConn(object):
         Create a role
         """
         if(RoleID == '' or RoleName == '' or RoleDesc == '' ):
-            raise ValueError('los parametros no pueden ser cadenas vacias')
+            raise Exception('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -444,7 +444,7 @@ class IDMConn(object):
         if(response.status_code == 200):
             return response.json()
         else:
-            raise ValueError('Algo salio mal', response.text)
+            raise Exception('Algo salio mal', response.text)
 
 
     def updateRoleName(self, RoleID: str, RoleName: str):
@@ -454,9 +454,9 @@ class IDMConn(object):
         keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions']
 
         if(RoleID == '' or RoleName == '' ):
-            raise ValueError('los parametros no pueden ser cadenas vacias')
+            raise Exception('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -498,9 +498,9 @@ class IDMConn(object):
             if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
-                raise ValueError('Algo salio mal', response.json())
+                raise Exception('Algo salio mal', response.json())
         else:
-            raise ValueError('Algo salio mal', response.text)
+            raise Exception('Algo salio mal', response.text)
 
 
     def updateRoleDesc(self, RoleID: str, RoleDesc: str):
@@ -511,9 +511,9 @@ class IDMConn(object):
         keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions']
 
         if(RoleID == '' or RoleDesc == '' ):
-            raise ValueError('los parametros no pueden ser cadenas vacias')
+            raise Exception('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -555,9 +555,9 @@ class IDMConn(object):
             if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
-                raise ValueError('Algo salio mal', response.json())
+                raise Exception('Algo salio mal', response.json())
         else:
-            raise ValueError('Algo salio mal', response.text)
+            raise Exception('Algo salio mal', response.text)
 
 
     def updateRoleInfo(self, RoleID: str, RoleName: str, RoleDesc: str):
@@ -568,9 +568,9 @@ class IDMConn(object):
         keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions']
 
         if(RoleID == '' or RoleName == '' or RoleDesc == '' ):
-            raise ValueError('los parametros no pueden ser cadenas vacias')
+            raise Exception('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -617,9 +617,9 @@ class IDMConn(object):
             if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
-                raise ValueError('Algo salio mal', response.json())
+                raise Exception('Algo salio mal', response.json())
         else:
-            raise ValueError('Algo salio mal', response.text)
+            raise Exception('Algo salio mal', response.text)
 
 
     def addRoleOwners( self, RoleID: str, NewRoleOwnersID: list[str] = []):
@@ -630,9 +630,9 @@ class IDMConn(object):
         keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions', 'owners']
 
         if(RoleID == ''):
-            raise ValueError('los parametros no pueden ser cadenas vacias')
+            raise Exception('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -683,9 +683,9 @@ class IDMConn(object):
             if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
-                raise ValueError('Algo salio mal', response.json())
+                raise Exception('Algo salio mal', response.json())
         else:
-            raise ValueError('Algo salio mal', response.text)
+            raise Exception('Algo salio mal', response.text)
         
 
     def removeRoleOwners( self, RoleID: str, NewRoleOwnersID: list[str] = []):
@@ -696,9 +696,9 @@ class IDMConn(object):
         keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions', 'owners']
 
         if(RoleID == ''):
-            raise ValueError('los parametros no pueden ser cadenas vacias')
+            raise Exception('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -746,17 +746,17 @@ class IDMConn(object):
             if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
-                raise ValueError('Algo salio mal', response.json())
+                raise Exception('Algo salio mal', response.json())
         else:
-            raise ValueError('Algo salio mal', response.text)
+            raise Exception('Algo salio mal', response.text)
 
 
     def setRoleApproval(self, RoleID: str, RoleApprovalName: str = None, RoleApprovalForRevoke: bool = False):
         keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions', 'owners', 'approvalIsStandard', 'approvalRequired', 'approvalRequestDef', 'approvalRequestDefName', 'revokeRequired']
         if(RoleID == ''):
-            raise ValueError('los parametros no pueden ser cadenas vacias')
+            raise Exception('los parametros no pueden ser cadenas vacias')
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -770,7 +770,7 @@ class IDMConn(object):
         if RoleApprovalName != '' and RoleApprovalName != None:
             approvalExist = self.searchApprovalProcess(RoleApprovalName)
             if len(approvalExist) == 0:
-                raise ValueError('No se encuentra el proceso de aprobacion')
+                raise Exception('No se encuentra el proceso de aprobacion')
             found = False
             for item in approvalExist:
                 if item['name'] == RoleApprovalName:
@@ -778,7 +778,7 @@ class IDMConn(object):
                     approvalWFID = item['id']
                     break
             if found == False:
-                raise ValueError('No se encuentra el proceso de aprobacion')
+                raise Exception('No se encuentra el proceso de aprobacion')
 
         oldRoleInfo = self.getRoleByID(RoleID)
 
@@ -822,9 +822,9 @@ class IDMConn(object):
             if ( 'succeeded' in response.json() ):
                 return response.json().get('succeeded')
             else:
-                raise ValueError('Algo salio mal', response.json())
+                raise Exception('Algo salio mal', response.json())
         else:
-            raise ValueError('Algo salio mal', response.text)
+            raise Exception('Algo salio mal', response.text)
 
 
     def deleteRoleByID(self, RoleID: str):
@@ -832,10 +832,10 @@ class IDMConn(object):
         Delete role by ID or DN
         """
         if RoleID == '':
-            raise ValueError('No es posible borrar un rol con id en blanco')
+            raise Exception('No es posible borrar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -874,10 +874,10 @@ class IDMConn(object):
         Get Child roles
         """
         if RoleID == '':
-            raise ValueError('No es posible obtener un rol con id en blanco')
+            raise Exception('No es posible obtener un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -886,10 +886,10 @@ class IDMConn(object):
         RoleInfo = self.getRoleByID(RoleID)
 
         if 'id' not in RoleInfo:
-            raise ValueError('Rol no encontrado')
+            raise Exception('Rol no encontrado')
 
         if RoleInfo['level'] == 10:
-            raise ValueError('Imposible obtener roles hijos de un rol 10')
+            raise Exception('Imposible obtener roles hijos de un rol 10')
         
         childUrl = self.IDMBaseUrl + self.IDMListChildRoles + '?q=*&size=500'
         headers = {
@@ -919,10 +919,10 @@ class IDMConn(object):
         Add Child roles
         """
         if RoleID == '':
-            raise ValueError('No es posible modificar un rol con id en blanco')
+            raise Exception('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -931,7 +931,7 @@ class IDMConn(object):
         oldRoleInfo = self.getRoleByID(RoleID)
 
         if oldRoleInfo['level'] == 10:
-            raise ValueError('Imposible asignar rol hijo a un rol 10')
+            raise Exception('Imposible asignar rol hijo a un rol 10')
         #requestDescription
 
         rolesToAdd = []
@@ -944,7 +944,7 @@ class IDMConn(object):
                 rolesToAdd.append(tmpRoleData)
 
         if len(rolesToAdd) == 0:
-            raise ValueError('Está intentando asignar roles que no existen')   
+            raise Exception('Está intentando asignar roles que no existen')   
         
         role = {}
         role['roleId'] = RoleID
@@ -977,10 +977,10 @@ class IDMConn(object):
         Remove Child roles
         """
         if RoleID == '':
-            raise ValueError('No es posible modificar un rol con id en blanco')
+            raise Exception('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -989,7 +989,7 @@ class IDMConn(object):
         oldRoleInfo = self.getRoleByID(RoleID)
 
         if oldRoleInfo['level'] == 10:
-            raise ValueError('Imposible asignar rol hijo a un rol 10')
+            raise Exception('Imposible asignar rol hijo a un rol 10')
         #requestDescription
 
         rolesToRemove = []
@@ -1002,7 +1002,7 @@ class IDMConn(object):
                 rolesToRemove.append(tmpRoleData)
 
         if len(rolesToRemove) == 0:
-            raise ValueError('Está intentando asignar roles que no existen')   
+            raise Exception('Está intentando asignar roles que no existen')   
     
         role = {}
         role['roleId'] = RoleID
@@ -1035,10 +1035,10 @@ class IDMConn(object):
         Get Parent roles
         """
         if RoleID == '':
-            raise ValueError('No es posible obtener un rol con id en blanco')
+            raise Exception('No es posible obtener un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1047,10 +1047,10 @@ class IDMConn(object):
         RoleInfo = self.getRoleByID(RoleID)
 
         if 'id' not in RoleInfo:
-            raise ValueError('Rol no encontrado')
+            raise Exception('Rol no encontrado')
 
         if RoleInfo['level'] == 30:
-            raise ValueError('Imposible obtener roles padre de un rol 30')
+            raise Exception('Imposible obtener roles padre de un rol 30')
         
         childUrl = self.IDMBaseUrl + self.IDMListParentRoles + '?q=*&size=500'
         headers = {
@@ -1080,10 +1080,10 @@ class IDMConn(object):
         Add Child roles
         """
         if RoleID == '':
-            raise ValueError('No es posible modificar un rol con id en blanco')
+            raise Exception('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1092,7 +1092,7 @@ class IDMConn(object):
         oldRoleInfo = self.getRoleByID(RoleID)
 
         if oldRoleInfo['level'] == 30:
-            raise ValueError('Imposible asignar rol padre a un rol 30')
+            raise Exception('Imposible asignar rol padre a un rol 30')
         #requestDescription
 
         rolesToAdd = []
@@ -1105,7 +1105,7 @@ class IDMConn(object):
                 rolesToAdd.append(tmpRoleData)
 
         if len(rolesToAdd) == 0:
-            raise ValueError('Está intentando asignar roles que no existen')    
+            raise Exception('Está intentando asignar roles que no existen')    
     
         role = {}
         role['roleId'] = RoleID
@@ -1138,10 +1138,10 @@ class IDMConn(object):
         Remove Child roles
         """
         if RoleID == '':
-            raise ValueError('No es posible modificar un rol con id en blanco')
+            raise Exception('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1150,7 +1150,7 @@ class IDMConn(object):
         oldRoleInfo = self.getRoleByID(RoleID)
 
         if oldRoleInfo['level'] == 30:
-            raise ValueError('Imposible retirar rol padre a un rol 30')
+            raise Exception('Imposible retirar rol padre a un rol 30')
         #requestDescription
 
         rolesToRemove = []
@@ -1163,7 +1163,7 @@ class IDMConn(object):
                 rolesToRemove.append(tmpRoleData)
     
         if len(rolesToRemove) == 0:
-            raise ValueError('Está intentando asignar roles que no existen')
+            raise Exception('Está intentando asignar roles que no existen')
         
         role = {}
         role['roleId'] = RoleID
@@ -1198,10 +1198,10 @@ class IDMConn(object):
         # 
 
         if RoleID == '':
-            raise ValueError('No es posible modificar un rol con id en blanco')
+            raise Exception('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1210,7 +1210,7 @@ class IDMConn(object):
         RoleInfo = self.getRoleByID(RoleID)
 
         if 'id' not in RoleInfo:
-            raise ValueError('Imposible obtener los usuarios de un rol que no existe')
+            raise Exception('Imposible obtener los usuarios de un rol que no existe')
 
         Role = {}
         Role['dn'] = RoleID
@@ -1243,10 +1243,10 @@ class IDMConn(object):
         """
 
         if RoleID == '':
-            raise ValueError('No es posible modificar un rol con id en blanco')
+            raise Exception('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1255,10 +1255,10 @@ class IDMConn(object):
         RoleInfo = self.getRoleByID(RoleID)
 
         if 'id' not in RoleInfo:
-            raise ValueError('Imposible asignar usuarios a un rol que no existe')
+            raise Exception('Imposible asignar usuarios a un rol que no existe')
 
         if len(UsersDn) == 0:
-            raise ValueError('Debe indicar un set de usuarios')
+            raise Exception('Debe indicar un set de usuarios')
 
         # recipientDn
 
@@ -1284,7 +1284,7 @@ class IDMConn(object):
                 usersToAdd.append(tmpUsrD)
 
         if len(usersToAdd) == 0:
-            raise ValueError('Los usuarios que intenta asignar no existen')
+            raise Exception('Los usuarios que intenta asignar no existen')
         
         assignments = []
         assignment = {}
@@ -1296,7 +1296,7 @@ class IDMConn(object):
             if EffectiveDate < EndDate:
                 assignment['expiryDate'] = str(int(EndDate.timestamp() * 1000))
             else:
-                raise ValueError('la fecha de retiro debe ser mayor a la fecha de asignacion')
+                raise Exception('la fecha de retiro debe ser mayor a la fecha de asignacion')
         
         assignments.append(assignment)
         reqData = {}
@@ -1331,10 +1331,10 @@ class IDMConn(object):
         """
 
         if RoleID == '':
-            raise ValueError('No es posible modificar un rol con id en blanco')
+            raise Exception('No es posible modificar un rol con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1343,10 +1343,10 @@ class IDMConn(object):
         RoleInfo = self.getRoleByID(RoleID)
 
         if 'id' not in RoleInfo:
-            raise ValueError('Imposible retirar usuarios a un rol que no existe')
+            raise Exception('Imposible retirar usuarios a un rol que no existe')
 
         if len(UsersDn) == 0:
-            raise ValueError('Debe indicar un set de usuarios')
+            raise Exception('Debe indicar un set de usuarios')
         
 
         alreadyAssignedJson = self.getRoleAssignments(RoleID)
@@ -1372,7 +1372,7 @@ class IDMConn(object):
                 usersToRemove.append(tmpUsrD)
 
         if len(usersToRemove) == 0:
-            raise ValueError('Los usuarios que intenta retirar no existen o no tienen asignado el rol')
+            raise Exception('Los usuarios que intenta retirar no existen o no tienen asignado el rol')
 
         assignments = []
         assignment = {}
@@ -1420,14 +1420,14 @@ class IDMConn(object):
         Search users by the CN
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
             self.RefreshToken()
 
         if UserCN == '':
-            raise ValueError('Debe especificar un CN de usuario')
+            raise Exception('Debe especificar un CN de usuario')
         
         attrs = 'CN'
         if len(FilterAttrs) > 1:
@@ -1458,10 +1458,10 @@ class IDMConn(object):
         get users by the DN
         """
         if UserDN == '':
-            raise ValueError('No es posible buscar un usuario con dn en blanco')
+            raise Exception('No es posible buscar un usuario con dn en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1500,7 +1500,7 @@ class IDMConn(object):
         Search resource by Name
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1532,10 +1532,10 @@ class IDMConn(object):
         Get resource by ID or DN
         """
         if ResourceID == '':
-            raise ValueError('No es posible buscar un recurso con id en blanco')
+            raise Exception('No es posible buscar un recurso con id en blanco')
         
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1578,7 +1578,7 @@ class IDMConn(object):
         Get all the drivers with config entitlements
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
@@ -1609,14 +1609,14 @@ class IDMConn(object):
         Get all the entitlements for a driver
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
             self.RefreshToken()
 
         if DriverID == '':
-            raise ValueError('No es posible driver con id en blanco')
+            raise Exception('No es posible driver con id en blanco')
 
         searchUrl = self.IDMBaseUrl + self.IDMDriversEntitlements
         headers = {
@@ -1648,14 +1648,14 @@ class IDMConn(object):
         Get entitlements avaliable values
         """
         if( self.IDMToken == None ):
-            raise ValueError('Not Logged In')
+            raise Exception('Not Logged In')
         
         currTime = datetime.datetime.now()
         if self.IDMTokenExpires <= currTime:
             self.RefreshToken()
 
         if EntitlemenID == '':
-            raise ValueError('No es posible buscar un entitlement con id en blanco')
+            raise Exception('No es posible buscar un entitlement con id en blanco')
         
         # IDMDriversEntitlementsValues
         
