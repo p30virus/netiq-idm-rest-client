@@ -2,3 +2,6 @@ Custom/*
 idm/dist/*
 __pycache__/*
 idm/src/cnetiq_idm_client/__pycache__/*
+encoded.ini
+*.key
+Gen_Dependecies.ipynb

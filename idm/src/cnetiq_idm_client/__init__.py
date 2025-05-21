@@ -30,6 +30,7 @@ class IDMConn(object):
     IDMTokenExpires=None
     IDMToken=None
     IDMRefreshToken=None
+    IDMOSPCookie=None
     IDMLogin='/osp/a/idm/auth/oauth2/grant'
     IDMLogout='/osp/a/idm/auth/app/logout'
 
@@ -129,8 +130,10 @@ class IDMConn(object):
                 expiredIn = response.json().get('expires_in')
                 currTime = datetime.datetime.now()
                 self.IDMTokenExpires = currTime + datetime.timedelta(seconds=expiredIn)
+                self.IDMOSPCookies = response.cookies.get_dict()
                 if self.IDMDebug == True:
                     print('token: ', self.IDMToken)
+                    print('cookies: ', self.IDMOSPCookies)
                 return True
         return False
     
@@ -149,12 +152,14 @@ class IDMConn(object):
             'Content-Type': 'application/x-www-form-urlencoded'
         }
         data = 'grant_type=refresh_token&username=' + self.IDMWebUser + '&password=' + self.IDMWebPass + '&refresh_token=' + self.IDMRefreshToken
-        response = requests.post(loginUrl, data=data, headers=headers, auth=auth, verify=False)
+        response = requests.post(loginUrl, data=data, headers=headers, auth=auth, verify=False, cookies=self.IDMOSPCookies)
         if(response.status_code == 200):
             if ( 'access_token' in response.json() ):
                 self.IDMToken = response.json().get('access_token')
+                self.IDMOSPCookies = response.cookies.get_dict()
                 if self.IDMDebug == True:
                     print('token: ', self.IDMToken)
+                    print('cookies: ', self.IDMOSPCookies)
                 return True
         return False
     
@@ -173,7 +178,7 @@ class IDMConn(object):
             'Content-Type': 'application/x-www-form-urlencoded',
             'Authorization': 'Bearer ' + self.IDMToken
         }
-        response = requests.get(logoutUrl, headers=headers, verify=False)
+        response = requests.get(logoutUrl, headers=headers, verify=False, cookies=self.IDMOSPCookies)
         
         if self.IDMDebug == True:
             print('Logout response: ', response.status_code)
@@ -181,6 +186,7 @@ class IDMConn(object):
         if(response.status_code == 200):
             self.IDMToken = None
             self.IDMRefreshToken = None
+            self.IDMOSPCookies = None
             return True
         return False
     
