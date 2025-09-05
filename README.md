@@ -55,22 +55,27 @@ com.netiq.<clientid>.clientPass = <cmd-output>
     * Login - ***Login***
     * Refresh token - ***RefreshToken***
     * Logout - ***Logout***
+
   * Usuario:
 
     * Búsqueda de usuarios - ***searchUser***
     * Obtener información del usuario - ***getUserByDN***
+
   * Recursos
 
     * Buscar recursos - ***searchResourceByName***
     * Obtener información del recurso - ***getResourceByID***
+
   * Entitlements
 
     * Obtener los drivers que tienen entitlements - ***getDriversWithEntitlements***
     * Obtener entitlements asociados a los drivers - ***getDriversEntitlements***
     * Obtener los valores asociados a un entitlement - ***getEntitlementValues***
+
   * Flujos
 
     * Buscar flujos de aprobación - ***searchApprovalProcess***
+
   * Roles
 
     * Obtener categorías disponibles - ***getRolesCategories***
@@ -82,8 +87,10 @@ com.netiq.<clientid>.clientPass = <cmd-output>
     * Actualizar nombre de un rol - ***updateRoleName***
     * Actualizar descripción de un rol - ***updateRoleDesc***
     * Actualizar nombre y descripción de un rol - ***updateRoleInfo***
-    * Agregar dueños de un rol - ***addRoleOwners***
-    * Retirar dueños de un rol - ***removeRoleOwners***
+    * Agregar dueños de un rol (Usuario) - ***addRoleOwners***
+    * Retirar dueños de un rol (Usuario) - ***removeRoleOwners***
+    * Agregar dueños de un rol (Grupo) - ***addRoleOwnersGroup***
+    * Retirar dueños de un rol (Grupo) - ***removeRoleOwnersGroup***
     * Asignar flujo de aprobación - ***setRoleApproval***
     * Obtener roles hijos - ***getChildRoles***
     * Asignar roles hijos - ***addChildRoles***
@@ -94,6 +101,12 @@ com.netiq.<clientid>.clientPass = <cmd-output>
     * Obtener miembros del rol - ***getRoleAssignments***
     * Asignar miembros a un rol (Usuarios) - ***assignRoleToUsers***
     * Retirar miembros a un rol (Usuarios) - ***removeRoleFromUsers***
+  
+  * Grupos
+
+    * Buscar grupos por descripcion - ***searchGroup***
+    * Obtener grupo por descripcion - ***getGroupByDesc***
+    * Crear grupo - ***createGroup***
 
 ## Como usarlo
 
