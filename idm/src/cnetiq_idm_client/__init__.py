@@ -61,7 +61,7 @@ class IDMConn(object):
     Users
     """
     IDMUserSearch='/IDMProv/rest/access/users/list'
-    IDMGetUSer='/IDMProv/rest/access/users/details'
+    IDMGetUser='/IDMProv/rest/access/users/details'
 
     """
     Resources
@@ -71,6 +71,14 @@ class IDMConn(object):
     IDMDrivers='/IDMProv/rest/catalog/drivers'
     IDMDriversEntitlements='/IDMProv/rest/catalog/drivers/driver'
     IDMDriversEntitlementsValues='/IDMProv/rest/catalog/drivers/entitlementValues/listV2'
+
+
+    """
+    Groups
+    """
+    #?nextIndex=1&q=Custom&sortOrder=asc&sortColumn=name&filterSearch=undefined&size=25
+    IDMGroupSearch='/IDMProv/rest/access/groups'
+    IDMAddGroup='/IDMProv/rest/access/groups'
     
 
 #endregion vars
@@ -663,8 +671,69 @@ class IDMConn(object):
                 ownerTmp['name'] = ownerExist['fullName']
                 ownerTmp['type'] = "user"
                 RoleInfo['owners'].append(ownerTmp)
+        
+        modRoleUrl = self.IDMBaseUrl + self.IDMUpdateRole
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+
+        roles = {}
+        roles['roles'] = []
+        roles['roles'].append(RoleInfo)
+        roles_json = json.dumps(roles)
+
+        response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            if ( 'succeeded' in response.json() ):
+                return response.json().get('succeeded')
+            else:
+                raise Exception('Algo salio mal', response.json())
+        else:
+            raise Exception('Algo salio mal', response.text)
 
 
+    def addRoleOwnersGroup( self, RoleID: str, NewRoleGropupOwnersDesc: list[str] = []):
+        """
+        Add Owners using group Desc
+        """
+
+        keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions', 'owners']
+
+        if(RoleID == ''):
+            raise Exception('los parametros no pueden ser cadenas vacias')
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        oldRoleInfo = self.getRoleByID(RoleID)
+
+        RoleInfo = {}
+
+        for key in keysToMantain:
+            if key in oldRoleInfo:
+                RoleInfo[key] = oldRoleInfo[key]
+
+        if 'owners' not in RoleInfo:
+            RoleInfo['owners'] = []
+        
+        for owner in NewRoleGropupOwnersDesc:
+            ownerExist = self.getGroupByDesc(owner)
+            if 'dn' in ownerExist:
+                ownerTmp = {}
+                ownerTmp['id'] = ownerExist['dn']
+                ownerTmp['name'] = ownerExist['description']
+                ownerTmp['type'] = "group"
+                RoleInfo['owners'].append(ownerTmp)
 
         
         modRoleUrl = self.IDMBaseUrl + self.IDMUpdateRole
@@ -696,7 +765,7 @@ class IDMConn(object):
 
     def removeRoleOwners( self, RoleID: str, NewRoleOwnersID: list[str] = []):
         """
-        Add Owners using users DN
+        Remove Owners using users DN
         """
 
         keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions', 'owners']
@@ -726,6 +795,69 @@ class IDMConn(object):
         
         for owner in currOwners:
             if owner['id'] not in NewRoleOwnersID:
+                newOwners.append(owner)
+        
+        RoleInfo['owners'] = newOwners
+        
+        roles = {}
+        roles['roles'] = []
+        roles['roles'].append(RoleInfo)
+        roles_json = json.dumps(roles)
+
+        modRoleUrl = self.IDMBaseUrl + self.IDMUpdateRole
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+
+        response = requests.put(modRoleUrl, headers=headers, verify=False, data=roles_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', modRoleUrl)
+            print('json: ', roles_json)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            if ( 'succeeded' in response.json() ):
+                return response.json().get('succeeded')
+            else:
+                raise Exception('Algo salio mal', response.json())
+        else:
+            raise Exception('Algo salio mal', response.text)
+
+
+    def removeRoleOwnersGroup( self, RoleID: str, NewRoleGroupOwnersDesc: list[str] = []):
+        """
+        Remove Owners using group Desc
+        """
+
+        keysToMantain = ['id', 'name', 'localizedNames', 'description', 'localizedDescriptions', 'owners']
+
+        if(RoleID == ''):
+            raise Exception('los parametros no pueden ser cadenas vacias')
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        oldRoleInfo = self.getRoleByID(RoleID)
+
+        RoleInfo = {}
+
+        for key in keysToMantain:
+            if key in oldRoleInfo:
+                RoleInfo[key] = oldRoleInfo[key]
+
+        if 'owners' not in RoleInfo:
+            RoleInfo['owners'] = []
+
+        currOwners = RoleInfo['owners']
+        newOwners = []
+        
+        for owner in currOwners:
+            if owner['name'] not in NewRoleGroupOwnersDesc:
                 newOwners.append(owner)
         
         RoleInfo['owners'] = newOwners
@@ -1474,7 +1606,7 @@ class IDMConn(object):
             self.RefreshToken()
 
 
-        searchUrl = self.IDMBaseUrl + self.IDMGetUSer + '?userDn=' + UserDN
+        searchUrl = self.IDMBaseUrl + self.IDMGetUser + '?userDn=' + UserDN
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + self.IDMToken
@@ -1492,6 +1624,108 @@ class IDMConn(object):
         return json.loads('{}')
 
 #endregion Users
+
+
+#region Groups
+
+    def searchGroup(self, GrupDesc: str ='*', MaxSearch=500):
+        """
+        Search group by the CN
+        """
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        if GrupDesc == '':
+            raise Exception('Debe especificar un CN de grupo')
+
+        #?nextIndex=1&q=Custom&sortOrder=asc&sortColumn=name&filterSearch=undefined&size=25
+        searchUrl = self.IDMBaseUrl + self.IDMGroupSearch + '?q=' + GrupDesc + '&sortOrder=asc&sortBy=name&filterSearch=undefined' + '&size=' + str(MaxSearch)
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            # total
+            if ( 'groups' in response.json() ):
+                return response.json().get('groups')
+            
+        return []
+    
+
+    def getGroupByDesc(self, GroupDesc: str):
+        """
+        get group by the Desc
+        """
+        if GroupDesc == '':
+            raise Exception('No es posible buscar un grupo con CN en blanco')
+        
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        response = self.searchGroup(GroupDesc, MaxSearch=1)
+
+        if( len(response) > 0 ):
+            group = response[0]
+            return group
+        
+
+        return json.loads('{}')
+    
+    def createGroup(self, GroupCN: str, GroupDesc: str, GroupContainer: str = 'ou=groups,o=data'):
+
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        if GroupCN == '':
+            raise Exception('No es posible crear un grupo con CN en blanco')
+        
+        if GroupDesc == '':
+            raise Exception('No es posible crear un grupo con descripcion en blanco')
+        
+        addUrl = self.IDMBaseUrl + self.IDMAddGroup
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        group = {}
+        group['name'] = GroupCN
+        group['description'] = GroupDesc
+        group['container'] = GroupContainer
+
+        group_json = json.dumps(group)
+
+        response = requests.post( addUrl, headers=headers, verify=False, json=group)
+
+        if self.IDMDebug == True:
+            print('URL: ', addUrl)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            return response.json()
+        else:
+            raise Exception('Algo salio mal', response.text)
+        
+
+
+#endregion Groups
 
 
 #region Resources

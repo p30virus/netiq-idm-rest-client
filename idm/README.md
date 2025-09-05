@@ -82,8 +82,10 @@ com.netiq.<clientid>.clientPass = <cmd-output>
     * Actualizar nombre de un rol - ***updateRoleName***
     * Actualizar descripción de un rol - ***updateRoleDesc***
     * Actualizar nombre y descripción de un rol - ***updateRoleInfo***
-    * Agregar dueños de un rol - ***addRoleOwners***
-    * Retirar dueños de un rol - ***removeRoleOwners***
+    * Agregar dueños de un rol (Usuario) - ***addRoleOwners***
+    * Retirar dueños de un rol (Usuario) - ***removeRoleOwners***
+    * Agregar dueños de un rol (Grupo) - ***addRoleOwnersGroup***
+    * Retirar dueños de un rol (Grupo) - ***removeRoleOwnersGroup***
     * Asignar flujo de aprobación - ***setRoleApproval***
     * Obtener roles hijos - ***getChildRoles***
     * Asignar roles hijos - ***addChildRoles***
