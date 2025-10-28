@@ -108,6 +108,13 @@ com.netiq.<clientid>.clientPass = <cmd-output>
     * Obtener grupo por descripcion - ***getGroupByDesc***
     * Crear grupo - ***createGroup***
 
+  * SoD
+
+    * Buscar SoD - ***searchSoD***
+    * Obtener SoD - ***getSoDByID***
+    * Crear SoD - ***createSoD***
+    * Eliminar SoD - ***deleteSoD***
+
 ## Como usarlo
 
 ### Buscar un rol

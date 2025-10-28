@@ -79,6 +79,16 @@ class IDMConn(object):
     #?nextIndex=1&q=Custom&sortOrder=asc&sortColumn=name&filterSearch=undefined&size=25
     IDMGroupSearch='/IDMProv/rest/access/groups'
     IDMAddGroup='/IDMProv/rest/access/groups'
+
+    """
+    SoD
+    """
+    IDMSoD = '/IDMProv/rest/catalog/sods'
+    IDMGetSoD = '/IDMProv/rest/catalog/sods/sod'
+    IDMAddSoD = '/IDMProv/rest/catalog/sods'
+    IDMCompleteSoD = '/IDMProv/rest/catalog/sods/sod'
+    IDMDeleteSoD = '/IDMProv/rest/catalog/sods/sod'
+    IDMUpdateSoD = '/IDMProv/rest/catalog/sods/sod'
     
 
 #endregion vars
@@ -1925,3 +1935,206 @@ class IDMConn(object):
         return json.loads('{}') 
 
 #endregion Entitlements
+
+
+
+#region SoD
+
+    def searchSoD(self, SoDName: str='*', MaxSearch=50):
+        """
+        Get Search SoD
+        """
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        searchUrl = self.IDMBaseUrl + self.IDMSoD + "?q=" + SoDName + "&size=" + str(MaxSearch)
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        
+        response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            # total
+            if ( 'sods' in response.json() ):
+                sods = response.json().get('sods')
+                return sods
+        return json.loads('{}') 
+    
+    def getSoDByID(self, SoDID: str):
+        """
+        Get SoD by ID or DN
+        """
+        if SoDID == '':
+            raise Exception('No es posible buscar un SoD con id en blanco')
+        
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+
+        searchUrl = self.IDMBaseUrl + self.IDMGetSoD
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        sods = {}
+        sod = {}
+        sodA = []
+        sod['id'] = SoDID
+        sodA.append(sod)
+
+        sods['sods'] = sodA
+        sods_json = json.dumps(sods)
+        response = requests.post(searchUrl, headers=headers, verify=False, data=sods_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('json: ', sods_json)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            # total
+            if ( 'sods' in response.json() ):
+                sod = response.json().get('sods')[0]
+                return sod
+        return json.loads('{}')
+    
+    def createSoD(self, SoDID: str, SoDName: str, SoDDesc: str, RoleId1: str, RoleId2: str, SoDReqWorkflow: bool = False, locals: list[str] = [ "zh_CN", "pt", "fr", "ru", "ja", "zh_TW", "it", "da", "iw", "de", "es", "en", "nb", "sv", "cs", "nl", "pl" ] ):
+        """
+        Create a SoD (Suported only with default approvers)
+        """
+        if(SoDName == '' or SoDDesc == '' or SoDID == '' or RoleId1 == '' or RoleId2 == '' ):
+            raise Exception('los parametros no pueden ser cadenas vacias')
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        SoD = {}
+        SoD['id'] = SoDID
+        SoD['name'] = SoDName
+        
+        locNames = []
+        for locale in locals:
+            loc = {}
+            loc['locale'] = locale
+            loc['name'] = SoDName
+            locNames.append(loc)
+
+        SoD['localizedNames'] = locNames
+
+        SoD['description'] = SoDDesc
+        
+        locDesc = []
+
+        for locale in locals:
+            loc = {}
+            loc['locale'] = locale
+            loc['desc'] = SoDDesc
+            locDesc.append(loc)
+
+        SoD['localizedDescriptions'] = locDesc
+
+        defaultApprovers = True
+        contWF = ''
+
+        if SoDReqWorkflow != True:
+            contWF = "alwaysAllow"
+            defaultApprovers = False
+        else:
+            contWF = "allowWithWorkflow"
+           
+
+        roles = []
+        role1 = {}
+        role1['id'] = RoleId1
+        roles.append(role1)
+        role2 = {}
+        role2['id'] = RoleId2
+        roles.append(role2)
+
+        addSoDUrl = self.IDMBaseUrl + self.IDMAddSoD
+
+        SoD['roles'] = roles
+        SoD['sodApprovalType'] = contWF
+        SoD['isDefaultApproversUsed'] = defaultApprovers
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        sod_json = json.dumps(SoD)
+        
+
+        response = requests.post(addSoDUrl, headers=headers, verify=False, data=sod_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', addSoDUrl)
+            print('json: ', sod_json)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            return response.json()
+        else:
+            raise Exception('Algo salio mal', response.text)
+
+    def deleteSoD(self, SoDID: str ):
+        """
+        Delete a SoD (Suported only with default approvers)
+        """
+        if(SoDID == ''):
+            raise Exception('los parametros no pueden ser cadenas vacias')
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        sods = {}
+        sod = {}
+        sodA = []
+        sod['id'] = SoDID
+        sodA.append(sod)
+
+        sods['sods'] = sodA
+        sods_json = json.dumps(sods)
+
+        addSoDUrl = self.IDMBaseUrl + self.IDMDeleteSoD
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+        
+
+        response = requests.delete(addSoDUrl, headers=headers, verify=False, data=sods_json)
+
+        if self.IDMDebug == True:
+            print('URL: ', addSoDUrl)
+            print('json: ', sods_json)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            return response.json()
+        else:
+            raise Exception('Algo salio mal', response.text)
+
+
+
+#endregion SoD
