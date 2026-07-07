@@ -1,3 +1,4 @@
+from typing import Literal
 from warnings import deprecated
 from requests.auth import HTTPBasicAuth
 import requests
@@ -5,6 +6,20 @@ import json
 import datetime
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+import ssl
+from ldap3 import Server, Connection, MODIFY_ADD, Tls, ALL, SUBTREE, LEVEL, BASE, ALL_ATTRIBUTES, set_config_parameter, get_config_parameter
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 class IDMConn(object):
@@ -94,6 +109,8 @@ class IDMConn(object):
 #endregion vars
 
 
+#region wrapper
+
     def __init__(self, IDMBaseUrl: str, IDMClientID: str, IDMClientSecret: str, IDMWebUser: str, IDMWebPass: str, IDMDebug: bool=False):
         """
         Create the connection
@@ -127,6 +144,7 @@ class IDMConn(object):
             raise Exception('algo salio mal')
         return True
 
+#endregion wrapper
 
 #region Sessions
     
@@ -2138,3 +2156,452 @@ class IDMConn(object):
 
 
 #endregion SoD
+
+
+class ValidarLDAP(object):
+
+    #region vars
+    """
+    DEBUG
+    """
+    LDAPDebug = False
+
+    """
+    BaseConnInfo
+    """
+    LDAPIP = None
+    LDAPPort = None
+    LDAPUserDN = None
+    LDAPUserPass = None
+    LDAPUseSSL = None
+    LDAPTLSConfig = None
+    LDAPServer = None
+    LDAPConn = None
+
+    """
+    AD Configs
+    """
+    LDAPADActive =  512
+    LDAPADInactive = 514
+    LDAPADActiveDontExpirePassword = 66048
+    
+
+    #endregion vars
+
+    def __init__(self, LDAPIP: str, LDAPPort: int, LDAPUserDN: str, LDAPUserPass: str, LDAPUseSSL: bool=False, LDAPTimeout: int=10, LDAPDebug: bool=False):
+        """
+        Create the connection
+        """
+        self.LDAPIP = LDAPIP
+        self.LDAPPort = LDAPPort
+        self.LDAPUserDN = LDAPUserDN
+        self.LDAPUserPass = LDAPUserPass
+        self.LDAPUseSSL = LDAPUseSSL
+        self.LDAPDebug = LDAPDebug
+        
+        # if LDAPUseSSL:
+        #     self.LDAPTLSConfig = Tls(validate=ssl.CERT_NONE, ciphers='ALL')
+            
+        # else:
+        #     self.LDAPServer = Server(host = LDAPIP, port = LDAPPort, use_ssl = LDAPUseSSL)
+
+        self.LDAPServer = Server(host = LDAPIP, port = LDAPPort, use_ssl = LDAPUseSSL,  tls = self.LDAPTLSConfig, connect_timeout=LDAPTimeout, get_info=ALL)
+        self.LDAPConn = Connection(self.LDAPServer, self.LDAPUserDN, self.LDAPUserPass, auto_bind=True)
+        set_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK',  get_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK') + ['userAccountControl'])
+        self.LDAPConn.start_tls()
+
+#region wrappers     
+
+    def __str__(self):
+        if self.LDAPConn.bound != True:
+            return f'Not Bind!!!'
+        else:
+            return f'Bind as {self.LDAPUserDN} using {self.LDAPUserPass} to the server {self.LDAPIP}:{self.LDAPPort} -> {self.LDAPConn.bound}'
+        
+    def __repr__(self):
+        if self.LDAPConn.bound != True:
+            return f'Not Bind!!! + {self.LDAPConn.result}'
+        else:
+            return f'Bind as {self.LDAPUserDN} using {self.LDAPUserPass} to the server {self.LDAPIP}:{self.LDAPPort} -> {self.LDAPConn.bound}'
+        
+    def __enter__(self):
+        self.LDAPConn.bind()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.LDAPConn.unbind()
+        if exc_type:
+            raise Exception(f'algo salio mal -> {exc_type} -> {exc_value}')
+        return True
+    
+#endregion wrappers
+
+    def Bind(self):
+        self.LDAPConn.bind()
+
+    def Unbind(self):
+        self.LDAPConn.unbind()
+
+    def ValidarExistencia(self, UserID: str, UserIDAttr: str = 'CN', UserClass: str = 'inetOrgPerson', BaseDN: str = ''):
+        ldapFilter = f'(&({UserIDAttr}={UserID})(objectclass={UserClass}))'
+        if self.LDAPConn.bound != True:
+            self.LDAPConn.bind()
+
+        # print(f'-------------------------')
+
+        results = self.LDAPConn.search(search_base=BaseDN, search_filter = ldapFilter, search_scope=SUBTREE, attributes=['objectclass', UserIDAttr])
+        if self.LDAPDebug:
+            print(self.LDAPConn.request)
+            print(self.LDAPConn.response)
+            print(self.LDAPConn.entries)
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+        # response['dn'] = None
+
+        bFound = False
+        foundDN = None
+        for entry in self.LDAPConn.response:
+            if entry == None or 'attributes' not in entry:
+                continue
+            foundAttr = entry['attributes'][UserIDAttr]
+            foundID = None
+            if isinstance(foundAttr, str):
+                foundID = entry['attributes'][UserIDAttr]
+            else:
+                foundID = entry['attributes'][UserIDAttr][0]
+           
+            if self.LDAPDebug:
+                print(f'{UserIDAttr}: {foundID}')
+
+            if foundID == UserID:
+                bFound = True
+                foundDN = entry['dn']
+                break
+
+        if bFound:
+            response['status'] = "Success"
+            response['message'] = f'Usuario con el ID {UserID} y la clase {UserClass} encontrado - {foundDN}'
+            response['dn'] = foundDN
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            response['status'] = "Failed"
+            response['message'] = f'Usuario con el ID {UserID} no encontrado'
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+    
+    def ValidarEstado(self, UserDN: str, AtributoEstado: Literal['loginDisabled', 'userAccountControl'], EstadoDeseado: Literal['ACTIVO', 'INACTIVO'] ):
+        if self.LDAPConn.bound != True:
+            self.LDAPConn.bind()
+
+        ldapFilter = '(objectclass=*)'
+
+        strAtributoEstado = f'{AtributoEstado}'
+ 
+        desiredStatus = True
+        strEstadoDeseado = f'{EstadoDeseado}'
+        if strEstadoDeseado == 'INACTIVO':
+            desiredStatus = False
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        if self.LDAPDebug:
+            print(f'Buscando la entrada {UserDN} con el estado deseado {desiredStatus}')
+
+        results = self.LDAPConn.search(search_base=UserDN, search_filter = ldapFilter, search_scope=BASE, attributes=['objectclass', AtributoEstado], size_limit = 1 )
+
+        if self.LDAPDebug:
+            print(self.LDAPConn.request)
+            print(self.LDAPConn.response)
+            print(self.LDAPConn.entries)
+
+       
+
+        bFound = False
+        foundStatus = False
+        for entry in self.LDAPConn.response:
+            if entry == None or 'attributes' not in entry:
+                continue
+            if strAtributoEstado not in entry['attributes']:
+                bFound = True
+                foundStatus = True
+                break
+            else:
+                bFound = True
+                foundAttr = entry['attributes'][strAtributoEstado]
+
+                if self.LDAPDebug:
+                    print(f'Estado en el LDAP: {foundAttr}')
+
+                if isinstance(foundAttr, bool) and strAtributoEstado == 'loginDisabled':
+                    foundStatus = not foundAttr
+                elif isinstance(foundAttr, bool) and strAtributoEstado != 'loginDisabled':
+                    foundStatus = foundAttr
+                elif isinstance(foundAttr, int) and strAtributoEstado == 'userAccountControl':
+                    if foundAttr != self.LDAPADInactive:
+                        foundStatus = True
+                    else:
+                        foundStatus = False
+                elif isinstance(foundAttr, int) and strAtributoEstado != 'userAccountControl':
+                    if foundAttr.upper() == 1:
+                        foundStatus = True
+                    else:
+                        foundStatus = False
+                elif isinstance(foundAttr, int):
+                    if foundAttr.upper() == 'TRUE' or foundAttr.upper() == '1':
+                        foundStatus = True
+                    else:
+                        foundStatus = False
+                break
+
+        if bFound:
+            statusResponse = 'Failed'
+            messageResponse = f'Usuario con el DN {UserDN} no se encunetra - {EstadoDeseado}'
+            if foundStatus == desiredStatus:
+                statusResponse = 'Success'
+                messageResponse = f'Usuario con el DN {UserDN} se encunetra - {EstadoDeseado}'
+
+            response['status'] = statusResponse
+            response['message'] = messageResponse
+            response['dn'] = UserDN
+            if response['status'] == 'Success':
+                print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+            else:
+                print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+            
+        else:
+            response['status'] = "Failed"
+            response['message'] = f'Usuario con el DN {UserDN} no encontrado'
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+        
+    def ValidarPassword(self, UserDN: str, UserPass: str):
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        try:
+            testLoginConn = Connection(self.LDAPServer, user=UserDN, password=UserPass, auto_bind=True, authentication='SIMPLE')
+            testLoginConn.unbind()
+            testLoginConn.bind()
+            if testLoginConn.bound == True:
+                statusResponse = 'Success'
+                messageResponse = f'Autenticacion de {UserDN} correcta - {testLoginConn.response}'
+            else:
+                statusResponse = 'Failed'
+                messageResponse = f'Autenticacion de {UserDN} no fue posible - {testLoginConn.response}'
+            testLoginConn.unbind()
+        except Exception  as e:
+            statusResponse = 'Failed'
+            messageResponse = f'Autenticacion de {UserDN} no fue posible - {e}'
+
+        response['status'] = statusResponse
+        response['message'] = messageResponse
+        response['dn'] = UserDN
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+
+        return response
+    
+    def ValidarValor(self, UserDN: str, Atributo: str, ValorBuscado = None, TipoAtributo: Literal['STRING', 'BOOL', 'DATE', 'DN'] = 'STRING' ):
+        if self.LDAPConn.bound != True:
+            self.LDAPConn.bind()
+
+        if len(UserDN) == '' or Atributo =='':
+            raise Exception('Debe proveer el DN de un usuario')
+        
+        if Atributo == '' or Atributo == None:
+            raise Exception('Debe proveer el nombre de un atributo')
+        
+
+        if TipoAtributo == "STRING" and not isinstance(ValorBuscado, str):
+            raise Exception('El atributo no coincide con el tipo a buscar')
+        elif TipoAtributo == "BOOL" and not isinstance(ValorBuscado, bool):
+            raise Exception('El atributo no coincide con el tipo a buscar')
+        elif TipoAtributo == "DATE" and not isinstance(ValorBuscado, datetime.datetime):
+            raise Exception('El atributo no coincide con el tipo a buscar')
+        elif TipoAtributo == "DN" and not isinstance(ValorBuscado, str):
+            raise Exception('El atributo no coincide con el tipo a buscar')
+  
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        if self.LDAPDebug:
+            print(f'Buscando la entrada {UserDN} con el atributo {Atributo} con valor {ValorBuscado} - Tipo {TipoAtributo}')
+
+        ldapFilter = '(objectclass=*)'
+
+        strAtributo = f'{Atributo}'
+
+        results = self.LDAPConn.search(search_base=UserDN, search_filter = ldapFilter, search_scope=BASE, attributes=['objectclass', strAtributo], size_limit = 1 )
+
+        if self.LDAPDebug:
+            print(self.LDAPConn.request)
+            print(self.LDAPConn.response)
+            print(self.LDAPConn.entries)
+
+        bFound = False
+        entryData = None
+        
+        for entry in self.LDAPConn.response:
+            if entry == None or 'attributes' not in entry:
+                continue
+            if strAtributo not in entry['attributes']:
+                bFound = True
+                entryData = None
+                break
+            else:
+                bFound = True
+                entryData = entry['attributes']
+        if bFound:
+            if entryData == None and ValorBuscado == None:
+                response['status'] = f'Success'
+                response['message'] = f'El usuario {UserDN} cuenta con el valor del atributo {Atributo} vacio'
+            elif entryData == None and ValorBuscado != None:
+                response['status'] = f'Failed'
+                response['message'] = f'El usuario {UserDN} no cuenta con el valor del atributo {Atributo} vacio'
+            elif strAtributo not in entryData and ValorBuscado == None:
+                response['status'] = f'Success'
+                response['message'] = f'El usuario {UserDN} cuenta con el valor del atributo {Atributo} vacio'
+            elif strAtributo not in entryData and ValorBuscado != None:
+                response['status'] = f'Failed'
+                response['message'] = f'El usuario {UserDN} no cuenta con el valor del atributo {Atributo} vacio'
+            else:
+                attrValue = entryData[strAtributo]
+                if isinstance(attrValue, list):
+                    currValue = attrValue
+                    if TipoAtributo == 'BOOL' and isinstance(currValue[0], bool):
+                        if ValorBuscado in currValue:
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    elif TipoAtributo == 'STRING' and isinstance(currValue[0], str):
+                        if ValorBuscado in currValue:
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    elif TipoAtributo == 'DATE' and isinstance(currValue[0], datetime.datetime):
+                        if ValorBuscado in currValue:
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    elif TipoAtributo == 'DN' and isinstance(currValue[0], str):
+                        formatStr =  [x.lower() for x in currValue]
+                        if ValorBuscado.lower() in formatStr:
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    else:
+                        response['status'] = f'Failed'
+                        response['message'] = f'No coinciden los tipos de los atributos suministrados' 
+                else:
+                    currValue = attrValue                    
+                    if TipoAtributo == 'BOOL' and isinstance(currValue, bool):
+                        if currValue == ValorBuscado:
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    elif TipoAtributo == 'STRING' and isinstance(currValue, str):
+                        if currValue == ValorBuscado:
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    elif TipoAtributo == 'DATE' and isinstance(currValue, datetime.datetime):
+                        if currValue == ValorBuscado:
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    elif TipoAtributo == 'DN' and isinstance(currValue, str):
+                        if currValue.lower() == ValorBuscado.lower():
+                            response['status'] = f'Success'
+                            response['message'] = f'El usuario {UserDN} cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                        else:
+                            response['status'] = f'Failed'
+                            response['message'] = f'El usuario {UserDN} no cuenta con el valor {ValorBuscado} en el atributo {Atributo}'
+                    else:
+                        response['status'] = f'Failed'
+                        response['message'] = f'No coinciden los tipos de los atributos suministrados'                            
+        else:
+            response['status'] = f'Failed'
+            response['message'] = f'Usuario {UserDN} no encontrado'
+
+        
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+
+        return response
+
+    def CrearEntrada(self, AtrNombrado: dict, Atributos: dict, Clases: list = ['inetOrgPerson', 'Person'], BaseDN: str=''):
+        if self.LDAPConn.bound != True:
+            self.LDAPConn.bind()
+
+        keys_list = [*AtrNombrado]
+        targetDN = f'{keys_list[0]}={AtrNombrado[keys_list[0]]}'
+        if BaseDN != '':
+            targetDN = targetDN + f',{BaseDN}'
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        results = self.LDAPConn.add(targetDN, Clases, Atributos)
+        
+        if results == True:
+            response['status'] = f'Success'
+            response['message'] = f'Entrada {targetDN} borrada de forma exitosa - {self.LDAPConn.result}'
+        else:
+            response['status'] = f'Failed'
+            response['message'] = f'Error borrando la entrada {targetDN} - {self.LDAPConn.result}'
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+
+    def BorrarEntrada(self, ObjDN: str):
+        if self.LDAPConn.bound != True:
+            self.LDAPConn.bind()
+
+        if ObjDN == '':
+            raise Exception('Debe proveer un DN valido')
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        results = self.LDAPConn.delete(ObjDN)
+
+        if results == True:
+            response['status'] = f'Success'
+            response['message'] = f'Entrada {ObjDN} borrada de forma exitosa - {self.LDAPConn.result}'
+        else:
+            response['status'] = f'Failed'
+            response['message'] = f'Error borrando la entrada {ObjDN} - {self.LDAPConn.result}'
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
