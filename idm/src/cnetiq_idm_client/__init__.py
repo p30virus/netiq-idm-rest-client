@@ -78,6 +78,10 @@ class IDMConn(object):
     """
     IDMUserSearch='/IDMProv/rest/access/users/list'
     IDMGetUser='/IDMProv/rest/access/users/details'
+    IDMGetUserRoles='/IDMProv/rest/access/assignments/role/list'
+    IDMGetUserResources='/IDMProv/rest/access/assignments/resource/list'
+    IDMGetUserGroups='/IDMProv/rest/access/groups/membershipInfo'
+
 
     """
     Resources
@@ -142,7 +146,7 @@ class IDMConn(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.Logout()
         if exc_type:
-            raise Exception('algo salio mal')
+            raise Exception(f'Algo salio mal {exc_type} - {exc_value}')
         return True
 
 #endregion wrapper
@@ -229,7 +233,6 @@ class IDMConn(object):
     
 #endregion Sessions
 
-
 #region Approval
 
     def searchApprovalProcess(self, ApprovalName: str = '*', MaxSearch=10):
@@ -262,7 +265,6 @@ class IDMConn(object):
         return []
 
 #endregion Provision
-
 
 #region Roles
 
@@ -1575,7 +1577,6 @@ class IDMConn(object):
 
 #endregion Roles
 
-
 #region Users
 
     @deprecated('Renombrada a searchUser')
@@ -1619,7 +1620,6 @@ class IDMConn(object):
             
         return []
 
-
     def getUserByDN(self, UserDN: str):
         """
         get users by the DN
@@ -1652,8 +1652,108 @@ class IDMConn(object):
             return user
         return json.loads('{}')
 
-#endregion Users
+    def getUserRolesByDN(self, UserDN: str):
+        """
+        get users roles by the DN
+        """
+        if UserDN == '':
+            raise Exception('No es posible buscar un usuario con dn en blanco')
+        
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
 
+        data = {}
+        data['dn'] = UserDN
+
+        searchUrl = self.IDMBaseUrl + self.IDMGetUserRoles + '?userDn=' + UserDN
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+
+        response = requests.post(searchUrl, headers=headers, verify=False, json=data)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            if ( 'assignments' in response.json() ):
+                return response.json().get('assignments')
+        return []
+    
+    def getUserResourcesByDN(self, UserDN: str):
+        """
+        get users resources by the DN
+        """
+        if UserDN == '':
+            raise Exception('No es posible buscar un usuario con dn en blanco')
+        
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        data = {}
+        data['dn'] = UserDN
+
+        searchUrl = self.IDMBaseUrl + self.IDMGetUserResources + '?userDn=' + UserDN
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+
+        response = requests.post(searchUrl, headers=headers, verify=False, json=data)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            if ( 'assignments' in response.json() ):
+                return response.json().get('assignments')
+        return []
+    
+    def getUserGroupsByDN(self, UserDN: str):
+        """
+        get users groups by the DN
+        """
+        if UserDN == '':
+            raise Exception('No es posible buscar un usuario con dn en blanco')
+        
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
+
+        searchUrl = self.IDMBaseUrl + self.IDMGetUserGroups + '?userDn=' + UserDN
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+
+        response = requests.get(searchUrl, headers=headers, verify=False)
+
+        if self.IDMDebug == True:
+            print('URL: ', searchUrl)
+            print('response: ', response.text)
+
+        if(response.status_code == 200):
+            if ( 'groupMemberof' in response.json() ):
+                return response.json().get('groupMemberof')
+        return []
+    
+#endregion Users
 
 #region Groups
 
@@ -1756,7 +1856,6 @@ class IDMConn(object):
 
 #endregion Groups
 
-
 #region Resources
 
 
@@ -1838,7 +1937,6 @@ class IDMConn(object):
         return json.loads('{}')
 
 #endregion Resources
-
 
 #region Entitlements
 
@@ -1954,8 +2052,6 @@ class IDMConn(object):
         return json.loads('{}') 
 
 #endregion Entitlements
-
-
 
 #region SoD
 
@@ -3036,5 +3132,4 @@ class ValidarDB(object):
         print(ret2)
         for row in ret2:
             print(f"engineid: {row.engineid} (keepalive: {row.keepalive})")
-        
         
