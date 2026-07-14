@@ -60,6 +60,9 @@ com.netiq.<clientid>.clientPass = <cmd-output>
 
     * Búsqueda de usuarios - ***searchUser***
     * Obtener información del usuario - ***getUserByDN***
+    * Obtener grupos del usuario - ***getUserGroupsByDN***
+    * Obtener roles del usuario - ***getUserRolesByDN***
+    * Obtener recursos del usuario - ***getUserResourcesByDN***
 
   * Recursos
 
