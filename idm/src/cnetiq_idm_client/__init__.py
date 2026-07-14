@@ -5,6 +5,7 @@ import requests
 import json
 import datetime
 import urllib3
+from sqlalchemy import create_engine, select, table, column, text
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import ssl
@@ -2925,3 +2926,115 @@ class ValidarHRRest(object):
             print(f'{bcolors.OKGREEN}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
         else:
             print(f'{bcolors.FAIL}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+
+
+class ValidarDB(object):
+    
+    #region vars
+    """
+    DEBUG
+    """
+    DBDebug = False    
+
+    """
+    CONNECTION
+    """
+    DBUser = None
+    DBPass = None
+    DBUrl = None
+    DBConn = None
+    DBEngine = None
+
+    #endregion vars
+
+    #region wrappers     
+
+    def __str__(self):
+        if self.DBConn.closed:
+            return f'No se encuentra conexion con la base de datos'    
+        else:
+            return f'Se encuentra conectado a la base de datos {self.DBConn}'
+        
+    def __repr__(self):
+        if self.DBConn.closed:
+            return f'No se encuentra conexion con la base de datos'    
+        else:
+            return f'Se encuentra conectado a la base de datos {self.DBConn}'
+        
+    def __enter__(self):
+        if self.DBConn.closed:
+            self.DBConn = self.DBEngine.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.DBConn.close()
+        if exc_type:
+            raise Exception(f'algo salio mal -> {exc_type} -> {exc_value}')
+        return True
+    
+    #endregion wrappers
+
+    def __init__(self, DBServer: str, DBInstance: str, DBPort: int, DBUser: str, DBPass: str, DBType: Literal['SQL Server', 'Oracle', 'Postgres'], DBDebug: bool=False):
+        # com.microsoft.sqlserver.jdbc.SQLServerDriver
+        # org.postgresql.Driver
+        # com.ibm.db2.jcc.DB2Driver
+        # oracle.jdbc.OracleDriver
+        self.DBUser = DBUser
+        self.DBPass = DBPass
+        self.DBDebug = DBDebug
+        
+        prefijo = ''
+        suf = ''
+        if DBType == 'SQL Server':
+            prefijo = 'mssql+pyodbc'
+            suf = '?driver=SQL Server&TrustServerCertificate=yes'
+        elif DBType == 'Oracle':
+            prefijo = 'oracle+oracledb'
+        elif DBType == 'Postgres':
+            prefijo = 'postgresql+psycopg2'
+        else:
+            raise Exception('DB no soportada')
+        
+        self.DBUrl = f'{prefijo}://{DBUser}:{DBPass}@{DBServer}:{DBPort}/{DBInstance}{suf}'
+        
+        self.DBEngine = create_engine(self.DBUrl)
+        self.DBConn = self.DBEngine.connect()
+
+    def Connect(self):
+        if self.DBConn.closed:
+            self.DBConn = self.DBEngine.connect()
+
+    def Close(self):
+        if self.DBConn.closed:
+            return
+        self.DBConn.close()
+
+    def Test(self):
+        if self.DBConn.closed:
+            self.Connect()
+        # alarway
+        # ret = select(table('users')).where(column('username') == text('alarway'))
+
+        query = text("SELECT username, id FROM users WHERE username = :id")
+        # ret = select(table('users')).where(column('username') == ':id')
+        print(query)
+        ret2 =  self.DBConn.execute(query, {"id": "alarway"})
+        print(ret2)
+        for row in ret2:
+            print(f"User: {row.username} (ID: {row.id})")
+
+    def Test2(self):
+        if self.DBConn.closed:
+            self.Connect()
+        # alarway
+        # ret = select(table('users')).where(column('username') == text('alarway'))
+
+        query = text("SELECT engineid, keepalive FROM afengine WHERE engineid = :id")
+        # ret = select(table('users')).where(column('username') == ':id')
+        print(query)
+        ret2 =  self.DBConn.execute(query, {"id": "ENGINE"})
+        print(ret2)
+        for row in ret2:
+            print(f"engineid: {row.engineid} (keepalive: {row.keepalive})")
+        
+        
