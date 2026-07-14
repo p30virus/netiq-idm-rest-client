@@ -2605,3 +2605,323 @@ class ValidarLDAP(object):
             print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
         else:
             print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+
+
+class ValidarHRRest(object):
+
+    #region vars
+    """
+    DEBUG
+    """
+    DVRDebug = False    
+
+    """
+    CONNECTION
+    """
+    DVRIP = None
+    DVRPort = None
+    DVRUser = None
+    DVRPass = None
+    DVRUseSSL = False
+    DVRContext = None
+
+    #endregion vars
+
+    #region wrappers     
+
+    def __str__(self):
+        return f'Making calls to the service {self.DVRIP}:{self.DVRPort}/{self.DVRContext} using {self.DVRUser}'
+        
+    def __repr__(self):
+        return f'Making calls to the service {self.DVRIP}:{self.DVRPort} using {self.DVRUser}'
+        
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            raise Exception(f'algo salio mal -> {exc_type} -> {exc_value}')
+        return True
+    
+    #endregion wrappers
+
+    def __init__(self, DVRIP: str, DVRPort: int, DVRContext: str, DVRUser: str, DVRPass: str, DVRUseSSL: bool=False, DVRDebug: bool=False):
+        """
+        Create the connection
+        """
+        self.DVRDebug = DVRDebug
+        self.DVRIP = DVRIP
+        self.DVRPort = DVRPort
+        self.DVRUser = DVRUser
+        self.DVRPass = DVRPass
+        self.DVRUseSSL = DVRUseSSL
+        self.DVRContext = DVRContext
+    
+    def ValidarUsuario(self, Atributo: str, ValorABuscar: str):
+        """
+        Valida los usuarios basado en el atributo y en el valor a buscar
+        """
+        
+        if Atributo == None or Atributo == '':
+            raise Exception('Se debe especificar el atributo de busqueda')
+        elif ValorABuscar == None or ValorABuscar == '' or ValorABuscar == '*':
+            raise Exception('Se debe especificar un valor para el atributo de busqueda')
+        elif ValorABuscar == '*' or '*' in ValorABuscar:
+            raise Exception('No se permite la busqueda por comodin')
+        
+        dvrProtocol = 'http'
+        if self.DVRUseSSL:
+            dvrProtocol = 'https'
+
+        dvrurl = f'{dvrProtocol}://{self.DVRIP}:{self.DVRPort}/{self.DVRContext}'
+        auth = HTTPBasicAuth(self.DVRUser, self.DVRPass)
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        data = f'?search-attr={Atributo} eq \'{ValorABuscar}\''
+        queryURL = f'{dvrurl}{data}'
+        if self.DVRDebug:
+            print(f'Calling url: {queryURL}')
+            print(f'Auth: {auth}')
+            print(f'headers: {headers}')
+        response = requests.get(queryURL, headers=headers, auth=auth, verify=False)
+
+        if self.DVRDebug:
+            print(f'response: {response}')
+            print(f'response.text: {response.text}')
+        
+        outResponse = {}
+        outResponse['status'] = None
+        outResponse['message'] = None
+
+        if response.status_code == 200 or response.status_code == 201 or response.status_code == 204:
+            outResponse['statusCode'] = response.status_code
+            if response.text != "":
+                jsonRes = response.json()
+                if 'totalResults' not in jsonRes and jsonRes['totalResults'] == 0:
+                    outResponse['status'] = f'Failed'
+                    outResponse['message'] = f'No se encuentran resultados - totalResults: {jsonRes['totalResults']} - Status Code {response.status_code}'
+                elif 'totalResults' in jsonRes and jsonRes['totalResults'] == 0:
+                    outResponse['status'] = f'Failed'
+                    outResponse['message'] = f'No se encuentran resultados - totalResults: {jsonRes['totalResults']} - Status Code {response.status_code}'
+                elif 'totalResults' in jsonRes and 'results' in jsonRes and jsonRes['totalResults'] > 1:
+                    outResponse['status'] = f'Failed'
+                    outResponse['message'] = f'Se encuentra mas de una coincidencia - totalResults: {jsonRes['totalResults']} - results: {jsonRes['results']} - Status Code {response.status_code}'
+                    outResponse['results'] = jsonRes['results']
+                elif 'results' not in jsonRes :
+                    outResponse['status'] = f'Failed'
+                    outResponse['message'] = f'No se encuentra una coincidencia'
+                else:
+                    outResponse['status'] = f'Success'
+                    outResponse['message'] = f'Se encuentra el objeto - totalResults: {jsonRes['totalResults']} - results: {jsonRes['results']} - Status Code {response.status_code}'
+                    outResponse['results'] = jsonRes['results']
+            else:
+                outResponse['status'] = f'Failed'
+                outResponse['message'] = f'No se encuentra una coincidencia'
+        if response.status_code == 500:
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'Algo salio mal - {response.text} - Status Code {response.status_code}'
+            outResponse['results'] = response.text
+            outResponse['statusCode'] = response.status_code
+        else:
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'No fue posible validar la respuesta del servicio'
+
+        if outResponse['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+        else:
+            print(f'{bcolors.FAIL}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+
+        return outResponse
+
+    def Alta(self, Data: dict):
+        """
+        Da de alta el usuario en caso de que exista lo modifica con los valores enviados, si no se encuentra un valor del schema mapping lo asigna como vacio, la siguiente es la forma de construir el dict
+        
+        data = {}
+        data['name'] = 'Test'
+        data['lastName'] = 'Test'
+        data['description'] = 'Test'
+        data['document'] = '000000003'
+        data['managerDocument'] = '000000002'
+        data['orgUnit'] = 'Test'
+
+        NOTA: es posible modificar usuarios si se incluyen todos los datos del usuario del schema mapping ya que si no se envia el attr se asigna al usuario como vacio
+        """
+        if Data == None or Data == '':
+            raise Exception('Se debe enviar data de la entrada')
+        dvrProtocol = 'http'
+        if self.DVRUseSSL:
+            dvrProtocol = 'https'
+        dvrurl = f'{dvrProtocol}://{self.DVRIP}:{self.DVRPort}/{self.DVRContext}'
+        
+        auth = HTTPBasicAuth(self.DVRUser, self.DVRPass)
+
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        jsonData = json.dumps(Data)
+        if self.DVRDebug:
+            print(f'Calling url: {dvrurl}')
+            print(f'Auth: {auth}')
+            print(f'headers: {headers}')
+            print(f'jsonData: {jsonData}')
+        response = requests.post(dvrurl, headers=headers, auth=auth, verify=False, data=jsonData)
+        if self.DVRDebug:
+            print(f'response: {response}')
+            print(f'response.text: {response.text}')
+
+        outResponse = {}
+        outResponse['status'] = None
+        outResponse['message'] = None
+
+        if response.status_code == 200 or response.status_code == 201:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Success'
+            outResponse['message'] = f'Se realiza el alta o la modificacion del usuario - Status Code {response.status_code}'
+        elif response.status_code == 204:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Success'
+            outResponse['message'] = f'No se realiza ninguna operacion sobre el usuario - Status Code {response.status_code}'
+        elif response.status_code == 500:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'Algo salio mal - {response.text} - Status Code {response.status_code}'
+            outResponse['results'] = response.text
+        else:
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'No fue posible validar la respuesta del servicio'
+
+        if outResponse['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+        else:
+            print(f'{bcolors.FAIL}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+
+        return outResponse
+
+    def Modificacion(self, Asociacion: str, Data: dict):
+        """
+        Modifica el usuario en caso de que exista, Si no se requiere atributos multivalor se debe enviar el add y remove del atributo a modificar
+        
+        data = {}
+        data['name'] = {}
+        data['name']['remove'] = ['Test']
+        data['name']['add'] = ['Test MOD VAL 2']
+        data['lastName'] = {}
+        data['lastName']['remove'] = ['Test']
+        data['lastName']['add'] = ['Test MOD VAL 2']
+        data['description'] = {}
+        data['description']['remove'] = ['Test']
+        data['description']['add'] = ['Test ADD VAL 2']
+        data['managerDocument'] = {}
+        data['managerDocument']['remove'] = ['000000002']
+        data['managerDocument']['add'] = ['000000001']
+        data['orgUnit'] = {}
+        data['orgUnit']['remove'] = 'Test'
+
+        NOTA: Si se realiza un add sin el remove del valor anterior el driver asume que es un attr multivalor y agrega el valor para manejar un replace se puede usar la misma funcion de alta
+        """
+        if Asociacion == None or Asociacion == '':
+            raise Exception('Se debe enviar el dato de la asociacion del usuario')
+        if Data == None or Data == '':
+            raise Exception('Se debe enviar data de la entrada')
+        dvrProtocol = 'http'
+        if self.DVRUseSSL:
+            dvrProtocol = 'https'
+        dvrurl = f'{dvrProtocol}://{self.DVRIP}:{self.DVRPort}/{self.DVRContext}/{Asociacion}'
+        
+        auth = HTTPBasicAuth(self.DVRUser, self.DVRPass)
+
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        jsonData = json.dumps(Data)
+        if self.DVRDebug:
+            print(f'Calling url: {dvrurl}')
+            print(f'Auth: {auth}')
+            print(f'headers: {headers}')
+            print(f'jsonData: {jsonData}')
+        response = requests.put(dvrurl, headers=headers, auth=auth, verify=False, data=jsonData)
+
+        if self.DVRDebug:
+            print(f'response: {response}')
+            print(f'response.text: {response.text}')
+
+
+        outResponse = {}
+        outResponse['status'] = None
+        outResponse['message'] = None
+
+
+        if response.status_code == 200 or response.status_code == 201:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Success'
+            outResponse['message'] = f'Se realiza la modificacion del usuario - Status Code {response.status_code}'
+        elif response.status_code == 204:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Success'
+            outResponse['message'] = f'Se realiza la modificacion del usuario - Status Code {response.status_code}'
+        elif response.status_code == 500:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'Algo salio mal - {response.text} - Status Code {response.status_code}'
+            outResponse['results'] = response.text
+        else:
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'No fue posible validar la respuesta del servicio'
+
+        if outResponse['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+        else:
+            print(f'{bcolors.FAIL}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+
+    def Borrar(self, Asociacion: str):
+        if Asociacion == None or Asociacion == '':
+            raise Exception('Se debe enviar el dato de la asociacion del usuario')
+        dvrProtocol = 'http'
+        if self.DVRUseSSL:
+            dvrProtocol = 'https'
+        dvrurl = f'{dvrProtocol}://{self.DVRIP}:{self.DVRPort}/{self.DVRContext}/{Asociacion}'
+        
+        auth = HTTPBasicAuth(self.DVRUser, self.DVRPass)
+
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        if self.DVRDebug:
+            print(f'Calling url: {dvrurl}')
+            print(f'Auth: {auth}')
+            print(f'headers: {headers}')
+        response = requests.delete(dvrurl, headers=headers, auth=auth, verify=False)
+
+        if self.DVRDebug:
+            print(f'response: {response}')
+            print(f'response.text: {response.text}')
+
+
+        outResponse = {}
+        outResponse['status'] = None
+        outResponse['message'] = None
+
+
+        if response.status_code == 200 or response.status_code == 201:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Success'
+            outResponse['message'] = f'Se elimina el usuario de forma satisfactoria - Status Code {response.status_code}'
+        elif response.status_code == 204:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Success'
+            outResponse['message'] = f'Se elimina el usuario de forma satisfactoria - Status Code {response.status_code}'
+        elif response.status_code == 500:
+            outResponse['statusCode'] = response.status_code
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'Algo salio mal - {response.text} - Status Code {response.status_code}'
+            outResponse['results'] = response.text
+        else:
+            outResponse['status'] = f'Failed'
+            outResponse['message'] = f'No fue posible validar la respuesta del servicio'
+
+        if outResponse['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+        else:
+            print(f'{bcolors.FAIL}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
