@@ -3,6 +3,12 @@
 * Python 3.13.2
 * Librerias:
   * request (python -m pip install requests)
+  *urllib3
+  * ldap3
+  * qlalchemy
+  * psycopg2
+  * pyodbc
+  * oracledb
 * Recomendados:
   * VSCode
 
