@@ -96,9 +96,9 @@ class IDMConn(object):
     """
     Groups
     """
-    #?nextIndex=1&q=Custom&sortOrder=asc&sortColumn=name&filterSearch=undefined&size=25
     IDMGroupSearch='/IDMProv/rest/access/groups'
     IDMAddGroup='/IDMProv/rest/access/groups'
+    IDMGetGroup='/IDMProv/rest/access/groups/members'
 
     """
     SoD
@@ -1790,7 +1790,6 @@ class IDMConn(object):
             
         return []
     
-
     def getGroupByDesc(self, GroupDesc: str):
         """
         get group by the Desc
@@ -1852,7 +1851,36 @@ class IDMConn(object):
         else:
             raise Exception('Algo salio mal', response.text)
         
+    def getGroupByID(self, GroupID: str):
+        """
+        get group by the Desc
+        """
+        if GroupID == '':
+            raise Exception('No es posible buscar un grupo con ID en blanco')
+        
+        if( self.IDMToken == None ):
+            raise Exception('Not Logged In')
+        
+        currTime = datetime.datetime.now()
+        if self.IDMTokenExpires <= currTime:
+            self.RefreshToken()
 
+        searchUrl = self.IDMBaseUrl + self.IDMGetGroup
+
+        group = {}
+        group['dn'] = GroupID
+        group_json = json.dumps(group)
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.IDMToken
+        }
+
+        response = requests.post(searchUrl, headers=headers, verify=False, data=group_json)
+
+        if(response.status_code == 200):
+            return response.json()
+        return json.loads('{}')
 
 #endregion Groups
 
@@ -3405,11 +3433,11 @@ class ValidarIDM(object):
                 retUsersRoles = self.IDMConnection.getUserRolesByDN(UsuarioDN)
                 if self.IDMDebug:
                     print(f'return: {retUsersRoles}')
-                # foundAttrLower = [item.lower() for item in foundAttr]
                 for role in retUsersRoles:
-                    if RolDN.lower() == role['id']:
+                    if RolDN.lower() == role['id'].lower():
                         response['status'] = f'Success'
                         response['message'] = f'El usuario {UsuarioDN} cuenta con el rol {RolDN}'
+                        break
         
         if response['status'] == 'Success':
             print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
@@ -3417,53 +3445,98 @@ class ValidarIDM(object):
             print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
         return response
 
+    def UsuarioTieneGrupo(self, UsuarioDN: str, GrupoDN: str):
 
-    # TODO: Agregar Funcion de obtener grupo
-    # TODO: Agregar Funcion de obtener recurso
-    # def UsuarioTieneGrupo(self, UsuarioDN: str, GrupoDN: str):
+        if self.IDMConnection == None:
+            self.Initialize()
 
-    #     if self.IDMConnection == None:
-    #         self.Initialize()
-
-    #     if UsuarioDN == None or UsuarioDN == '' or UsuarioDN == '*':
-    #         raise Exception('Se debe especificar un valor para el id de usuario')
-    #     elif GrupoDN == None or GrupoDN == '' or GrupoDN == '*':
-    #         raise Exception('Se debe especificar un valor para el grupo')
+        if UsuarioDN == None or UsuarioDN == '' or UsuarioDN == '*':
+            raise Exception('Se debe especificar un valor para el id de usuario')
+        elif GrupoDN == None or GrupoDN == '' or GrupoDN == '*':
+            raise Exception('Se debe especificar un valor para el grupo')
         
-    #     response = {}
-    #     response['status'] = None
-    #     response['message'] = None
+        response = {}
+        response['status'] = None
+        response['message'] = None
         
-    #     retDataUser = self.IDMConnection.getUserByDN(UsuarioDN)
+        retDataUser = self.IDMConnection.getUserByDN(UsuarioDN)
 
-    #     if self.IDMDebug:
-    #         print(f'return: {retDataUser}')
+        if self.IDMDebug:
+            print(f'return: {retDataUser}')
 
-    #     if 'dn' not in retDataUser:
-    #         response['status'] = f'Failed'
-    #         response['message'] = f'No fue posible encontrar el usuario {UsuarioDN}'
-    #     else:
-    #         retDataRol = self.IDMConnection.getGrp(GrupoDN)
-    #         if self.IDMDebug:
-    #             print(f'return: {retDataRol}')
+        if 'dn' not in retDataUser:
+            response['status'] = f'Failed'
+            response['message'] = f'No fue posible encontrar el usuario {UsuarioDN}'
+        else:
+            retDataGrupo = self.IDMConnection.getGroupByID(GrupoDN)
+            if self.IDMDebug:
+                print(f'return: {retDataGrupo}')
 
-    #         if 'id' not in retDataRol:
-    #             response['status'] = f'Failed'
-    #             response['message'] = f'No fue posible encontrar el rol {GrupoDN}'
-    #         else:
-    #             response['status'] = f'Failed'
-    #             response['message'] = f'El usuario {UsuarioDN} no cuenta con el rol {GrupoDN}'
-    #             retUsersRoles = self.IDMConnection.getUserRolesByDN(UsuarioDN)
-    #             if self.IDMDebug:
-    #                 print(f'return: {retUsersRoles}')
-    #             # foundAttrLower = [item.lower() for item in foundAttr]
-    #             for role in retUsersRoles:
-    #                 if GrupoDN.lower() == role['id']:
-    #                     response['status'] = f'Success'
-    #                     response['message'] = f'El usuario {UsuarioDN} cuenta con el rol {GrupoDN}'
+            if not retDataGrupo:
+                response['status'] = f'Failed'
+                response['message'] = f'No fue posible encontrar el grupo {GrupoDN}'
+            else:
+                response['status'] = f'Failed'
+                response['message'] = f'El usuario {UsuarioDN} no cuenta con el grupo {GrupoDN}'
+                retUsersGroups = self.IDMConnection.getUserGroupsByDN(UsuarioDN)
+                if self.IDMDebug:
+                    print(f'return: {retUsersGroups}')
+                foundGroups = [item.lower() for item in retUsersGroups]
+                if GrupoDN.lower() in foundGroups:
+                    response['status'] = f'Success'
+                    response['message'] = f'El usuario {UsuarioDN} cuenta con el grupo {GrupoDN}'
         
-    #     if response['status'] == 'Success':
-    #         print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
-    #     else:
-    #         print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
-    #     return response
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+    
+    def UsuarioTieneRecurso(self, UsuarioDN: str, RecursoDN: str):
+
+        if self.IDMConnection == None:
+            self.Initialize()
+
+        if UsuarioDN == None or UsuarioDN == '' or UsuarioDN == '*':
+            raise Exception('Se debe especificar un valor para el id de usuario')
+        elif RecursoDN == None or RecursoDN == '' or RecursoDN == '*':
+            raise Exception('Se debe especificar un valor para el recurso')
+        
+        response = {}
+        response['status'] = None
+        response['message'] = None
+        
+        retDataUser = self.IDMConnection.getUserByDN(UsuarioDN)
+
+        if self.IDMDebug:
+            print(f'return: {retDataUser}')
+
+        if 'dn' not in retDataUser:
+            response['status'] = f'Failed'
+            response['message'] = f'No fue posible encontrar el usuario {UsuarioDN}'
+        else:
+            retDataRes = self.IDMConnection.getResourceByID(RecursoDN)
+            if self.IDMDebug:
+                print(f'return: {retDataRes}')
+
+            if 'id' not in retDataRes:
+                response['status'] = f'Failed'
+                response['message'] = f'No fue posible encontrar el recurso {RecursoDN}'
+            else:
+                response['status'] = f'Failed'
+                response['message'] = f'El usuario {UsuarioDN} no cuenta con el grupo {RecursoDN}'
+                retUsersRes = self.IDMConnection.getUserResourcesByDN(UsuarioDN)
+                if self.IDMDebug:
+                    print(f'return: {retUsersRes}')
+
+                for res in retUsersRes:
+                    if RecursoDN.lower() == res['id']:
+                        response['status'] = f'Success'
+                        response['message'] = f'El usuario {UsuarioDN} cuenta con el rol {RecursoDN}'
+                        break
+        
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response

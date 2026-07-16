@@ -1,7 +1,7 @@
-Requests
-urllib3
-ldap3
-sqlalchemy
-psycopg2
-pyodbc
-oracledb
+requests>=2.32.5
+urllib3>=2.5.0
+ldap3==2.9.1
+psycopg2>=2.9.12
+pyodbc>=5.3.0
+oracledb>=4.0.2
+SQLAlchemy>=2.0.51
