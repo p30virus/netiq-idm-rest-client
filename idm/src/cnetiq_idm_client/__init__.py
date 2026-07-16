@@ -2302,9 +2302,11 @@ class ValidarLDAP(object):
         # else:
         #     self.LDAPServer = Server(host = LDAPIP, port = LDAPPort, use_ssl = LDAPUseSSL)
 
-        self.LDAPServer = Server(host = LDAPIP, port = LDAPPort, use_ssl = LDAPUseSSL,  tls = self.LDAPTLSConfig, connect_timeout=LDAPTimeout, get_info=ALL)
+        self.LDAPServer = Server(host = LDAPIP, port = LDAPPort, use_ssl = LDAPUseSSL,  tls = self.LDAPTLSConfig, connect_timeout=LDAPTimeout, get_info='ALL')
         self.LDAPConn = Connection(self.LDAPServer, self.LDAPUserDN, self.LDAPUserPass, auto_bind=True)
-        set_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK',  get_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK') + ['userAccountControl'])
+        excludeForCheck = ['userAccountControl', 'loginDisabled','memberOf', 'nrfMemberOf', 'groupMembership', 'member']
+        # set_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK',  get_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK') + excludeForCheck)
+        set_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK',  get_config_parameter('ATTRIBUTES_EXCLUDED_FROM_CHECK') + ['userAccountControl', 'loginDisabled','memberOf', 'nrfMemberOf', 'groupMembership', 'member'])
         self.LDAPConn.start_tls()
 
 #region wrappers     
@@ -2414,8 +2416,6 @@ class ValidarLDAP(object):
             print(self.LDAPConn.request)
             print(self.LDAPConn.response)
             print(self.LDAPConn.entries)
-
-       
 
         bFound = False
         foundStatus = False
@@ -2648,7 +2648,6 @@ class ValidarLDAP(object):
             print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
         else:
             print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
-
         return response
 
     def CrearEntrada(self, AtrNombrado: dict, Atributos: dict, Clases: list = ['inetOrgPerson', 'Person'], BaseDN: str=''):
@@ -2677,6 +2676,7 @@ class ValidarLDAP(object):
             print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
         else:
             print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
 
     def BorrarEntrada(self, ObjDN: str):
         if self.LDAPConn.bound != True:
@@ -2702,6 +2702,73 @@ class ValidarLDAP(object):
             print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
         else:
             print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+    
+    def ValidarMembresia(self, ObjDN: str, GroupDN: str):
+        if self.LDAPConn.bound != True:
+            self.LDAPConn.bind()
+        if ObjDN == '':
+            raise Exception('Debe proveer un DN valido')
+        elif GroupDN == '':
+            raise Exception('Debe proveer un DN de grupo valido')
+        
+        response = {}
+        response['status'] = None
+        response['message'] = None
+        
+        filterG = '(|(objectclass=nrfGroup)(objectclass=groupOfNames)(objectClass=groupOfUniqueNames))'
+        vendorName = self.LDAPServer.info.vendor_name
+        if not vendorName:
+            filterG = '(|(objectclass=Group)(objectclass=groupOfNames)(objectClass=groupOfUniqueNames))'
+        
+        groupInfo = self.LDAPConn.search(GroupDN, filterG, 'BASE', attributes=['objectclass', 'cn' ], size_limit = 1)
+        if self.LDAPDebug:
+            print(self.LDAPConn.request)
+            print(self.LDAPConn.response)
+            print(self.LDAPConn.entries)
+
+        if groupInfo == False: 
+            response['status'] = f'Failed'
+            response['message'] = f'No se encuentra el grupo deseado {GroupDN}'
+        else:
+            filterO = '(objectclass=*)'
+            attrMembership = ['memberOf', 'nrfMemberOf', 'groupMembership', 'member']
+            attrToReturn = attrMembership
+            attrToReturn.append('objectclass')
+            attrToReturn.append('cn')
+            objectInfo = self.LDAPConn.search(ObjDN, filterO, 'BASE', attributes=attrToReturn, size_limit = 1 )    
+
+            if self.LDAPDebug:
+                print(self.LDAPConn.request)
+                print(self.LDAPConn.response)
+                print(self.LDAPConn.entries)
+            
+            if objectInfo == False: 
+                response['status'] = f'Failed'
+                response['message'] = f'No se encuentra el objeto deseado {ObjDN}'
+            else:
+                for entry in self.LDAPConn.response:
+                    if entry == None or 'attributes' not in entry:
+                        continue
+                    
+                    response['status'] = f'Failed'
+                    response['message'] = f'El objeto {ObjDN} no es miembro del grupo {GroupDN}'
+
+                    for attr in attrMembership:
+                        if attr not in entry['attributes']:
+                            continue
+                        foundAttr = entry['attributes'][attr]
+                        foundAttrLower = [item.lower() for item in foundAttr]
+                        if GroupDN.lower() in foundAttrLower:
+                            response['status'] = f'Success'
+                            response['message'] = f'El objeto {ObjDN} es miembro del grupo {GroupDN}'
+                            break
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
 
 
 class ValidarHRRest(object):
@@ -3133,3 +3200,270 @@ class ValidarDB(object):
         for row in ret2:
             print(f"engineid: {row.engineid} (keepalive: {row.keepalive})")
         
+
+class ValidarIDM(object):
+
+    #region vars
+    """
+    DEBUG
+    """
+    IDMDebug = False
+
+    """
+    Conn
+    """
+    IDMConnection = None
+    IDMUser = None
+    IDMPass = None
+    IDMClient = None
+    IDMSecret = None
+    IDMUrl = None
+    #endregion vars
+
+    #region wrappers     
+
+    def __str__(self):
+        if self.IDMConnection == None:
+            return f'Not connected!!!'
+        else:
+            return f'{self.IDMConnection}'
+        
+    def __repr__(self):
+        if self.IDMConnection == None:
+            return f'Not connected!!!'
+        else:
+            return f'{repr(self.IDMConnection)}'
+        
+    def __enter__(self):
+        if self.IDMConnection != None:
+            self.IDMConnection.Login()
+        else:
+            self.Initialize()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.IDMConnection != None:
+            self.IDMConnection.Logout()
+            self.IDMConnection = None
+        if exc_type:
+            raise Exception(f'algo salio mal -> {exc_type} -> {exc_value}')
+        return True
+    
+#endregion wrappers
+
+    def __init__(self, IDMUrl: str, IDMClient: str, IDMSecret: str, IDMUser: str, IDMPass: str, IDMDebug: bool=False):
+        self.IDMUrl = IDMUrl
+        self.IDMClient = IDMClient
+        self.IDMSecret = IDMSecret
+        self.IDMUser = IDMUser
+        self.IDMPass = IDMPass
+        self.IDMDebug = IDMDebug
+        self.Initialize()
+        
+    def Initialize(self):
+        self.Close()
+        # self.IDMConnection = IDMConn(self.IDMUrl, self.IDMClient, self.IDMSecret, self.IDMUser, self.IDMPass, IDMDebug=self.IDMDebug)
+        self.IDMConnection = IDMConn(self.IDMUrl, self.IDMClient, self.IDMSecret, self.IDMUser, self.IDMPass, IDMDebug=False)
+        self.IDMConnection.Login()
+    
+    def Close(self):
+        if self.IDMConnection != None:
+            self.IDMConnection.Logout()
+            self.IDMConnection = None
+
+    def ValidarUsuario(self, Usuario: str, AtributoDeBusqueda: Literal['CN']):
+
+        if self.IDMConnection == None:
+            self.Initialize()
+
+        if Usuario == None or Usuario == '' or Usuario == '*':
+            raise Exception('Se debe especificar un valor para el id de usuario')
+        elif Usuario == '*' or '*' in Usuario:
+            raise Exception('No se permite la busqueda por comodin')
+
+        retData = self.IDMConnection.searchUser(Usuario, FilterAttrs=[AtributoDeBusqueda])
+        
+        if self.IDMDebug:
+            print(f'return: {retData}')
+            print(f'Encontrados: {len(retData)}')
+        
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        if len(retData) == 0:
+            response['status'] = f'Failed'
+            response['message'] = f'No fue posible encontrar un usuario con el {AtributoDeBusqueda} - {Usuario}'
+        elif len(retData) == 1:
+            response['status'] = f'Failed'
+            response['message'] = f'No fue posible encontrar un usuario con el {AtributoDeBusqueda} - {Usuario}'
+            user = retData[0]
+            if AtributoDeBusqueda in user:
+                val = user[AtributoDeBusqueda]
+                if val.lower() == Usuario.lower():
+                    response['status'] = f'Success'
+                    response['message'] = f'Se encuentra el usuario {Usuario} - {user['dn']}'
+                    response['dn'] = f'{user['dn']}'
+            else:
+                for att in user['primaryAttributes']:
+                        if att['key'] != AtributoDeBusqueda:
+                            continue
+                        else:
+                            for attrVal in att['attributeValues']:
+                                val = attrVal['$']
+                                if val.lower() == Usuario.lower():
+                                    response['status'] = f'Success'
+                                    response['message'] = f'Se encuentra el usuario {Usuario} - {user['dn']}'
+                                    response['dn'] = f'{user['dn']}'
+                                    break
+                for att in user['secondaryAttributes']:
+                    if att['key'] != AtributoDeBusqueda:
+                        continue
+                    else:
+                        for attrVal in att['attributeValues']:
+                            val = attrVal['$']
+                            if val.lower() == Usuario.lower():
+                                response['status'] = f'Success'
+                                response['message'] = f'Se encuentra el usuario {Usuario} - {user['dn']}'
+                                response['dn'] = f'{user['dn']}'
+                                break
+        else:
+            response['status'] = f'Failed'
+            response['message'] = f'No fue posible encontrar un usuario con el {AtributoDeBusqueda} - {Usuario}'
+            for user in retData:
+                if AtributoDeBusqueda in user:
+                    val = user[AtributoDeBusqueda]
+                    if val.lower() == Usuario.lower():
+                        response['status'] = f'Success'
+                        response['message'] = f'Se encuentra el usuario {Usuario} - {user['dn']}'
+                        response['dn'] = f'{user['dn']}'
+                        break
+                else:
+                    for att in user['primaryAttributes']:
+                        if att['key'] != AtributoDeBusqueda:
+                            continue
+                        else:
+                            for attrVal in att['attributeValues']:
+                                val = attrVal['$']
+                                if val.lower() == Usuario.lower():
+                                    response['status'] = f'Success'
+                                    response['message'] = f'Se encuentra el usuario {Usuario} - {user['dn']}'
+                                    response['dn'] = f'{user['dn']}'
+                                    break
+                    for att in user['secondaryAttributes']:
+                        if att['key'] != AtributoDeBusqueda:
+                            continue
+                        else:
+                            for attrVal in att['attributeValues']:
+                                val = attrVal['$']
+                                if val.lower() == Usuario.lower():
+                                    response['status'] = f'Success'
+                                    response['message'] = f'Se encuentra el usuario {Usuario} - {user['dn']}'
+                                    response['dn'] = f'{user['dn']}'
+                                    break
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+    
+    def UsuarioTieneRol(self, UsuarioDN: str, RolDN: str):
+
+        if self.IDMConnection == None:
+            self.Initialize()
+
+        if UsuarioDN == None or UsuarioDN == '' or UsuarioDN == '*':
+            raise Exception('Se debe especificar un valor para el id de usuario')
+        elif RolDN == None or RolDN == '' or RolDN == '*':
+            raise Exception('Se debe especificar un valor para el rol')
+        
+        response = {}
+        response['status'] = None
+        response['message'] = None
+        
+        retDataUser = self.IDMConnection.getUserByDN(UsuarioDN)
+
+        if self.IDMDebug:
+            print(f'return: {retDataUser}')
+
+        if 'dn' not in retDataUser:
+            response['status'] = f'Failed'
+            response['message'] = f'No fue posible encontrar el usuario {UsuarioDN}'
+        else:
+            retDataRol = self.IDMConnection.getRoleByID(RolDN)
+            if self.IDMDebug:
+                print(f'return: {retDataRol}')
+
+            if 'id' not in retDataRol:
+                response['status'] = f'Failed'
+                response['message'] = f'No fue posible encontrar el rol {RolDN}'
+            else:
+                response['status'] = f'Failed'
+                response['message'] = f'El usuario {UsuarioDN} no cuenta con el rol {RolDN}'
+                retUsersRoles = self.IDMConnection.getUserRolesByDN(UsuarioDN)
+                if self.IDMDebug:
+                    print(f'return: {retUsersRoles}')
+                # foundAttrLower = [item.lower() for item in foundAttr]
+                for role in retUsersRoles:
+                    if RolDN.lower() == role['id']:
+                        response['status'] = f'Success'
+                        response['message'] = f'El usuario {UsuarioDN} cuenta con el rol {RolDN}'
+        
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+
+
+    # TODO: Agregar Funcion de obtener grupo
+    # TODO: Agregar Funcion de obtener recurso
+    # def UsuarioTieneGrupo(self, UsuarioDN: str, GrupoDN: str):
+
+    #     if self.IDMConnection == None:
+    #         self.Initialize()
+
+    #     if UsuarioDN == None or UsuarioDN == '' or UsuarioDN == '*':
+    #         raise Exception('Se debe especificar un valor para el id de usuario')
+    #     elif GrupoDN == None or GrupoDN == '' or GrupoDN == '*':
+    #         raise Exception('Se debe especificar un valor para el grupo')
+        
+    #     response = {}
+    #     response['status'] = None
+    #     response['message'] = None
+        
+    #     retDataUser = self.IDMConnection.getUserByDN(UsuarioDN)
+
+    #     if self.IDMDebug:
+    #         print(f'return: {retDataUser}')
+
+    #     if 'dn' not in retDataUser:
+    #         response['status'] = f'Failed'
+    #         response['message'] = f'No fue posible encontrar el usuario {UsuarioDN}'
+    #     else:
+    #         retDataRol = self.IDMConnection.getGrp(GrupoDN)
+    #         if self.IDMDebug:
+    #             print(f'return: {retDataRol}')
+
+    #         if 'id' not in retDataRol:
+    #             response['status'] = f'Failed'
+    #             response['message'] = f'No fue posible encontrar el rol {GrupoDN}'
+    #         else:
+    #             response['status'] = f'Failed'
+    #             response['message'] = f'El usuario {UsuarioDN} no cuenta con el rol {GrupoDN}'
+    #             retUsersRoles = self.IDMConnection.getUserRolesByDN(UsuarioDN)
+    #             if self.IDMDebug:
+    #                 print(f'return: {retUsersRoles}')
+    #             # foundAttrLower = [item.lower() for item in foundAttr]
+    #             for role in retUsersRoles:
+    #                 if GrupoDN.lower() == role['id']:
+    #                     response['status'] = f'Success'
+    #                     response['message'] = f'El usuario {UsuarioDN} cuenta con el rol {GrupoDN}'
+        
+    #     if response['status'] == 'Success':
+    #         print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+    #     else:
+    #         print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+    #     return response

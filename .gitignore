@@ -5,3 +5,5 @@ idm/src/cnetiq_idm_client/__pycache__/*
 encoded.ini
 *.key
 Gen_Dependecies.ipynb
+*.ipynb
+config.ini
