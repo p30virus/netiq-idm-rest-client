@@ -138,7 +138,7 @@ idmConn.Login()
 print("idmConn: ",idmConn)
 print("rper : ",repr(idmConn))
 
-role = idmConn.findRoleByName("child*")
+role = idmConn.searchRoleByName("child*")
 roleF = idmConn.getRoleByID(role[0]['id'])
 
 idmConn.Logout()
@@ -151,7 +151,7 @@ with IDMConn('https://myidm.examlple.com', 'custom-clientid', 'custom-secret', '
   print("idmConn: ",idmConn)
   print("rper : ",repr(idmConn))
 
-  role = idmConn.findRoleByName("child*")
+  role = idmConn.searchRoleByName("child*")
   roleF = idmConn.getRoleByID(role[0]['id'])
 
 ```
