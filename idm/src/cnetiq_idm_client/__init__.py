@@ -162,7 +162,13 @@ class IDMConn(object):
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
+
         data = 'grant_type=password&username=' + self.IDMWebUser + '&password=' + self.IDMWebPass
+
+        # if self.IDMDebug:
+        #     print(f'url: {loginUrl}')
+        #     print(f'data: {data}')
+        
         response = requests.post(loginUrl, data=data, headers=headers, auth=auth, verify=False)
         if(response.status_code == 200):
             if ( 'access_token' in response.json() ):
