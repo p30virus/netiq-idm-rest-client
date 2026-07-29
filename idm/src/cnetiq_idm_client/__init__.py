@@ -2362,23 +2362,23 @@ class ValidarLDAP(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.LDAPConn.unbind()
+        self.Close()
         if exc_type:
             raise Exception(f'algo salio mal -> {exc_type} -> {exc_value}')
         return True
     
 #endregion wrappers
 
-    def Bind(self):
+    def Initialize(self):
         self.LDAPConn.bind()
 
-    def Unbind(self):
+    def Close(self):
         self.LDAPConn.unbind()
 
     def ValidarExistencia(self, UserID: str, UserIDAttr: str = 'CN', UserClass: str = 'inetOrgPerson', BaseDN: str = ''):
         ldapFilter = f'(&({UserIDAttr}={UserID})(objectclass={UserClass}))'
         if self.LDAPConn.bound != True:
-            self.LDAPConn.bind()
+            self.Initialize()
 
         # print(f'-------------------------')
 
@@ -2426,7 +2426,7 @@ class ValidarLDAP(object):
     
     def ValidarEstado(self, UserDN: str, AtributoEstado: Literal['loginDisabled', 'userAccountControl'], EstadoDeseado: Literal['ACTIVO', 'INACTIVO'] ):
         if self.LDAPConn.bound != True:
-            self.LDAPConn.bind()
+            self.Initialize()
 
         ldapFilter = '(objectclass=*)'
 
@@ -2528,6 +2528,8 @@ class ValidarLDAP(object):
         except Exception  as e:
             statusResponse = 'Failed'
             messageResponse = f'Autenticacion de {UserDN} no fue posible - {e}'
+            testLoginConn.unbind()
+
 
         response['status'] = statusResponse
         response['message'] = messageResponse
@@ -2542,7 +2544,7 @@ class ValidarLDAP(object):
     
     def ValidarValor(self, UserDN: str, Atributo: str, ValorBuscado = None, TipoAtributo: Literal['STRING', 'BOOL', 'DATE', 'DN'] = 'STRING' ):
         if self.LDAPConn.bound != True:
-            self.LDAPConn.bind()
+            self.Initialize()
 
         if len(UserDN) == '' or Atributo =='':
             raise Exception('Debe proveer el DN de un usuario')
@@ -2686,7 +2688,7 @@ class ValidarLDAP(object):
 
     def CrearEntrada(self, AtrNombrado: dict, Atributos: dict, Clases: list = ['inetOrgPerson', 'Person'], BaseDN: str=''):
         if self.LDAPConn.bound != True:
-            self.LDAPConn.bind()
+            self.Initialize()
 
         keys_list = [*AtrNombrado]
         targetDN = f'{keys_list[0]}={AtrNombrado[keys_list[0]]}'
@@ -2714,7 +2716,7 @@ class ValidarLDAP(object):
 
     def BorrarEntrada(self, ObjDN: str):
         if self.LDAPConn.bound != True:
-            self.LDAPConn.bind()
+            self.Initialize()
 
         if ObjDN == '':
             raise Exception('Debe proveer un DN valido')
@@ -2740,7 +2742,7 @@ class ValidarLDAP(object):
     
     def ValidarMembresia(self, ObjDN: str, GroupDN: str):
         if self.LDAPConn.bound != True:
-            self.LDAPConn.bind()
+            self.Initialize()
         if ObjDN == '':
             raise Exception('Debe proveer un DN valido')
         elif GroupDN == '':
@@ -3164,7 +3166,7 @@ class ValidarDB(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.DBConn.close()
+        self.Close()
         if exc_type:
             raise Exception(f'algo salio mal -> {exc_type} -> {exc_value}')
         return True
@@ -3197,7 +3199,7 @@ class ValidarDB(object):
         self.DBEngine = create_engine(self.DBUrl)
         self.DBConn = self.DBEngine.connect()
 
-    def Connect(self):
+    def Initialize(self):
         if self.DBConn.closed:
             self.DBConn = self.DBEngine.connect()
 
@@ -3206,33 +3208,120 @@ class ValidarDB(object):
             return
         self.DBConn.close()
 
-    def Test(self):
+    def ValidarUsuario(self, IdUsuario: str, ColumnaID: str, ColumnaIdentificador: str, Tabla: str):
+
         if self.DBConn.closed:
-            self.Connect()
-        # alarway
-        # ret = select(table('users')).where(column('username') == text('alarway'))
+            self.Initialize()
 
-        query = text("SELECT username, id FROM users WHERE username = :id")
-        # ret = select(table('users')).where(column('username') == ':id')
-        print(query)
-        ret2 =  self.DBConn.execute(query, {"id": "alarway"})
-        print(ret2)
-        for row in ret2:
-            print(f"User: {row.username} (ID: {row.id})")
+        if IdUsuario == None or IdUsuario == '':
+            raise Exception('Se debe especificar un valor para el id de usuario')
+        elif '*' in IdUsuario:
+            raise Exception('No es posible definir un comodin para el usuario')
+        elif ColumnaID == None or ColumnaID == '':
+            raise Exception('Se debe especificar un valor para la columna a evaluar')
+        elif '*' in IdUsuario:
+            raise Exception('Se debe especificar un valor para la columna a evaluar no es posible un comodin')
+        elif Tabla == None or Tabla == '':
+            raise Exception('Se debe especificar un valor para la tabla a evaluar')
+        elif '*' in IdUsuario:
+            raise Exception('Se debe especificar un valor para la tabla a evaluar no es posible un comodin')
+        elif ColumnaIdentificador == None or ColumnaIdentificador == '':
+            raise Exception('Se debe especificar un valor para el identificador unico')
+        elif '*' in ColumnaIdentificador:
+            raise Exception('Se debe especificar un valor para el identificador unico no es posible un comodin')
 
-    def Test2(self):
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        query = text(f'SELECT {ColumnaID}, {ColumnaIdentificador} FROM users WHERE {ColumnaID} = :id')
+        if ColumnaIdentificador.upper() == ColumnaID.upper():
+            query = text(f'SELECT {ColumnaID} FROM users WHERE {ColumnaID} = :id')
+
+        params = {"id": IdUsuario}
+
+        if self.DBDebug:
+            print(f'Query: {query}')
+            print(f'Params: {params}')
+
+        returnInfo =  self.DBConn.execute(query, params)
+
+        response['status'] = f'Failed'
+        response['message'] = f'No fue posible encontrar usuario con el id {IdUsuario} en la columna {ColumnaID}'
+
+        if self.DBDebug:
+            print(f'returnInfo: {returnInfo}')
+
+        for row in returnInfo:
+            rowDict = dict(row._mapping)
+            if rowDict[ColumnaID] == IdUsuario:
+                response['status'] = f'Success'
+                response['message'] = f'Se encuentra el usuario {rowDict[ColumnaID]} en la columna {ColumnaID} y el identificador {rowDict[ColumnaIdentificador]}'
+                response['id'] = rowDict[ColumnaIdentificador]
+                break
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+
+    def ValidarEstado(self, IdentificadorUsuario, ColumnaIdentificadorUsuario: str, ColumnaEstado: str, EstadoDeseado, Tabla: str):
+
         if self.DBConn.closed:
-            self.Connect()
-        # alarway
-        # ret = select(table('users')).where(column('username') == text('alarway'))
+            self.Initialize()
 
-        query = text("SELECT engineid, keepalive FROM afengine WHERE engineid = :id")
-        # ret = select(table('users')).where(column('username') == ':id')
-        print(query)
-        ret2 =  self.DBConn.execute(query, {"id": "ENGINE"})
-        print(ret2)
-        for row in ret2:
-            print(f"engineid: {row.engineid} (keepalive: {row.keepalive})")
+        if IdentificadorUsuario == None or IdentificadorUsuario == '':
+            raise Exception('Se debe especificar un valor para el id de usuario')
+        elif ColumnaIdentificadorUsuario == None or ColumnaIdentificadorUsuario == '':
+            raise Exception('Se debe especificar un valor para la columna de identificador de usuario')
+        elif '*' in ColumnaIdentificadorUsuario:
+            raise Exception('No es posible definir un comodin para la columna de identificador de usuario')
+        elif ColumnaEstado == None or ColumnaEstado == '':
+            raise Exception('Se debe especificar un valor para la columna a evaluar')
+        elif EstadoDeseado == None or EstadoDeseado == '':
+            raise Exception('Se debe especificar un valor para el estado')
+        elif Tabla == None or Tabla == '':
+            raise Exception('Se debe especificar una tabla')
+        elif '*' in Tabla:
+            raise Exception('Se debe especificar una tabla')
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        query = text(f'SELECT {ColumnaIdentificadorUsuario}, {ColumnaEstado} FROM users WHERE {ColumnaIdentificadorUsuario} = :id')
+
+        params = {"id": IdentificadorUsuario}
+
+        if self.DBDebug:
+            print(f'Query: {query}')
+            print(f'Params: {params}')
+
+        returnInfo =  self.DBConn.execute(query, params)
+
+        response['status'] = f'Failed'
+        response['message'] = f'No fue posible encontrar usuario con el id {IdentificadorUsuario} en la columna {ColumnaIdentificadorUsuario}'
+
+        for row in returnInfo:
+            rowDict = dict(row._mapping)
+            if rowDict[ColumnaIdentificadorUsuario] == IdentificadorUsuario:
+                # response['status'] = f'Success'
+                # response['message'] = f'Se encuentra el usuario {rowDict[ColumnaID]} en la columna {ColumnaID} y el identificador {rowDict[ColumnaIdentificador]}'
+                response['id'] = rowDict[ColumnaIdentificadorUsuario]
+                if rowDict[ColumnaEstado] == EstadoDeseado:
+                    response['status'] = f'Success'
+                    response['message'] = f'Se encuentra el usuario {rowDict[ColumnaIdentificadorUsuario]} con estado {rowDict[ColumnaEstado]}'
+                else:
+                    response['status'] = f'Failed'
+                    response['message'] = f'Se encuentra el usuario {rowDict[ColumnaIdentificadorUsuario]} con estado {rowDict[ColumnaEstado]}' 
+                break
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
         
 
 class ValidarIDM(object):
@@ -3546,3 +3635,80 @@ class ValidarIDM(object):
         else:
             print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
         return response
+
+    def ValidarRol(self, NombreRol: str):
+
+        if self.IDMConnection == None:
+            self.Initialize()
+
+        if NombreRol == None or NombreRol == '' or NombreRol == '*':
+            raise Exception('Se debe especificar un valor para el nombre del rol')
+
+
+        retDataRol = self.IDMConnection.searchRoleByName(NombreRol)
+
+        if self.IDMDebug:
+            print(f'return: {retDataRol}')
+
+        response = {}
+        
+
+        if len(retDataRol) > 0:
+            response['status'] = f'Failed'
+            response['message'] = f'No se encuentra rol con nombre {NombreRol}'
+
+            for rol in retDataRol:
+                if rol['name'] == NombreRol:
+                    response['status'] = f'Success'
+                    response['message'] = f'Se encontro rol con nombre {NombreRol} - {rol['id']}'
+                    response['dn'] = f'{rol['id']}'
+                    break
+
+        else:
+            response['status'] = f'Failed'
+            response['message'] = f'No se encuentra rol con nombre {NombreRol}'
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+    
+    def ValidarRecurso(self, NombreRecurso: str):
+    
+            if self.IDMConnection == None:
+                self.Initialize()
+    
+            if NombreRecurso == None or NombreRecurso == '' or NombreRecurso == '*':
+                raise Exception('Se debe especificar un valor para el nombre del recurso')
+    
+    
+            retDataRes = self.IDMConnection.searchResourceByName(NombreRecurso)
+    
+            if self.IDMDebug:
+                print(f'return: {retDataRes}')
+    
+            response = {}
+            response['status'] = None
+            response['message'] = None
+    
+            if len(retDataRes) > 0:
+                response['status'] = f'Failed'
+                response['message'] = f'No se encuentra recurso con nombre {NombreRecurso}'
+    
+                for res in retDataRes:
+                    if res['name'] == NombreRecurso:
+                        response['status'] = f'Success'
+                        response['message'] = f'Se encontro recurso con nombre {NombreRecurso} - {res['id']}'
+                        response['dn'] = f'{res['id']}'
+                        break
+    
+            else:
+                response['status'] = f'Failed'
+                response['message'] = f'No se encuentra recurso con nombre {NombreRecurso}'
+    
+            if response['status'] == 'Success':
+                print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+            else:
+                print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+            return response
