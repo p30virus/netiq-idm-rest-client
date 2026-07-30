@@ -11,6 +11,34 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 import ssl
 from ldap3 import Server, Connection, MODIFY_ADD, Tls, ALL, SUBTREE, LEVEL, BASE, ALL_ATTRIBUTES, set_config_parameter, get_config_parameter
 
+def NovellToDN(EntryDN: str, NovellTree: str='', RootNaming: str='o', EntryNaming: str='cn', BranchNaming: str='ou'):
+
+    if EntryDN == None or EntryDN == '':
+        raise Exception('Debe proveeer un dn valido')
+    elif NovellTree == None or NovellTree == '':
+        raise Exception('Nombre valido')
+    elif RootNaming == None or RootNaming == '':
+        raise Exception('Nombre valido')
+    elif EntryNaming == None or EntryNaming == '':
+        raise Exception('Nombre valido')
+    elif BranchNaming == None or BranchNaming == '':
+        raise Exception('Nombre valido')
+    
+    ldapdata = EntryDN.split('\\')
+    ldapdata.remove('')
+    ldapdata.remove(NovellTree)
+    ldap_tuple = []
+    for index, entry in enumerate(ldapdata):
+        if index == 0:
+            ldap_tuple.insert( 0, (RootNaming, entry) )
+        elif index >= len(ldapdata):
+            ldap_tuple.insert( 0, (EntryNaming, entry) )
+        else:
+            ldap_tuple.insert( 0, (BranchNaming, entry) )
+
+    safedn = dn_string = ','.join([f"{k}={v}" for k, v in ldap_tuple])
+    return safedn
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -1604,10 +1632,12 @@ class IDMConn(object):
             raise Exception('Debe especificar un CN de usuario')
         
         attrs = 'CN'
-        if len(FilterAttrs) > 1:
+        if len(FilterAttrs) >= 1:
             attrs = ','.join(FilterAttrs)
-        
-        
+
+        print(FilterAttrs)
+        print(','.join(FilterAttrs))
+        print(attrs)
         searchUrl = self.IDMBaseUrl + self.IDMUserSearch + '?q=' + UserCN + '&sortOrder=asc&sortBy=name&searchAttr=' + attrs + '&size=' + str(MaxSearch) + '&advSearch='
         headers = {
             'Content-Type': 'application/json',
@@ -2918,7 +2948,7 @@ class ValidarHRRest(object):
             else:
                 outResponse['status'] = f'Failed'
                 outResponse['message'] = f'No se encuentra una coincidencia'
-        if response.status_code == 500:
+        elif response.status_code == 500:
             outResponse['status'] = f'Failed'
             outResponse['message'] = f'Algo salio mal - {response.text} - Status Code {response.status_code}'
             outResponse['results'] = response.text
@@ -3075,6 +3105,8 @@ class ValidarHRRest(object):
         else:
             print(f'{bcolors.FAIL}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
 
+        return outResponse
+
     def Borrar(self, Asociacion: str):
         if Asociacion == None or Asociacion == '':
             raise Exception('Se debe enviar el dato de la asociacion del usuario')
@@ -3125,6 +3157,8 @@ class ValidarHRRest(object):
             print(f'{bcolors.OKGREEN}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
         else:
             print(f'{bcolors.FAIL}{outResponse['status']}{bcolors.ENDC}: {outResponse['message']}')
+
+        return outResponse
 
 
 class ValidarDB(object):
@@ -3442,7 +3476,8 @@ class ValidarIDM(object):
     DEBUG
     """
     IDMDebug = False
-
+    IDMExtendedDebug = False
+    
     """
     Conn
     """
@@ -3485,7 +3520,7 @@ class ValidarIDM(object):
     
 #endregion wrappers
 
-    def __init__(self, IDMUrl: str, IDMClient: str, IDMSecret: str, IDMUser: str, IDMPass: str, IDMDebug: bool=False):
+    def __init__(self, IDMUrl: str, IDMClient: str, IDMSecret: str, IDMUser: str, IDMPass: str, IDMDebug: bool=False, IDMExtendedDebug: bool=False):
         self.IDMUrl = IDMUrl
         self.IDMClient = IDMClient
         self.IDMSecret = IDMSecret
@@ -3497,7 +3532,7 @@ class ValidarIDM(object):
     def Initialize(self):
         self.Close()
         # self.IDMConnection = IDMConn(self.IDMUrl, self.IDMClient, self.IDMSecret, self.IDMUser, self.IDMPass, IDMDebug=self.IDMDebug)
-        self.IDMConnection = IDMConn(self.IDMUrl, self.IDMClient, self.IDMSecret, self.IDMUser, self.IDMPass, IDMDebug=False)
+        self.IDMConnection = IDMConn(self.IDMUrl, self.IDMClient, self.IDMSecret, self.IDMUser, self.IDMPass, IDMDebug=self.IDMExtendedDebug)
         self.IDMConnection.Login()
     
     def Close(self):
@@ -3505,7 +3540,7 @@ class ValidarIDM(object):
             self.IDMConnection.Logout()
             self.IDMConnection = None
 
-    def ValidarUsuario(self, Usuario: str, AtributoDeBusqueda: Literal['CN']):
+    def ValidarUsuario(self, Usuario: str, AtributoDeBusqueda: Literal['CN', 'workforceID']):
 
         if self.IDMConnection == None:
             self.Initialize()
