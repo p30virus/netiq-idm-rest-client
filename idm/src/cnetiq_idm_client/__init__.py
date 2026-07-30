@@ -12,17 +12,19 @@ import ssl
 from ldap3 import Server, Connection, MODIFY_ADD, Tls, ALL, SUBTREE, LEVEL, BASE, ALL_ATTRIBUTES, set_config_parameter, get_config_parameter
 
 def NovellToDN(EntryDN: str, NovellTree: str='', RootNaming: str='o', EntryNaming: str='cn', BranchNaming: str='ou'):
+    """
+    Requiere un DN en formato SLASH Ex: \\IDMLAB\\data\\users\\gablabarrera
 
+    Se debe tener en cuenta que el caracter \\ debe estar escapado
+    """
     if EntryDN == None or EntryDN == '':
         raise Exception('Debe proveeer un dn valido')
-    elif NovellTree == None or NovellTree == '':
-        raise Exception('Nombre valido')
     elif RootNaming == None or RootNaming == '':
-        raise Exception('Nombre valido')
+        raise Exception('Debe suministrar el attr de nombrado de la raiz')
     elif EntryNaming == None or EntryNaming == '':
-        raise Exception('Nombre valido')
+        raise Exception('Debe suministrar el attr de nombrado de la entrada')
     elif BranchNaming == None or BranchNaming == '':
-        raise Exception('Nombre valido')
+        raise Exception('Debe suministrar el attr de nombrado de las ramas')
     
     ldapdata = EntryDN.split('\\')
     ldapdata.remove('')
