@@ -3219,11 +3219,11 @@ class ValidarDB(object):
             raise Exception('No es posible definir un comodin para el usuario')
         elif ColumnaID == None or ColumnaID == '':
             raise Exception('Se debe especificar un valor para la columna a evaluar')
-        elif '*' in IdUsuario:
+        elif '*' in ColumnaID:
             raise Exception('Se debe especificar un valor para la columna a evaluar no es posible un comodin')
         elif Tabla == None or Tabla == '':
             raise Exception('Se debe especificar un valor para la tabla a evaluar')
-        elif '*' in IdUsuario:
+        elif '*' in Tabla:
             raise Exception('Se debe especificar un valor para la tabla a evaluar no es posible un comodin')
         elif ColumnaIdentificador == None or ColumnaIdentificador == '':
             raise Exception('Se debe especificar un valor para el identificador unico')
@@ -3234,9 +3234,9 @@ class ValidarDB(object):
         response['status'] = None
         response['message'] = None
 
-        query = text(f'SELECT {ColumnaID}, {ColumnaIdentificador} FROM users WHERE {ColumnaID} = :id')
+        query = text(f'SELECT {ColumnaID}, {ColumnaIdentificador} FROM {Tabla} WHERE {ColumnaID} = :id')
         if ColumnaIdentificador.upper() == ColumnaID.upper():
-            query = text(f'SELECT {ColumnaID} FROM users WHERE {ColumnaID} = :id')
+            query = text(f'SELECT {ColumnaID} FROM {Tabla} WHERE {ColumnaID} = :id')
 
         params = {"id": IdUsuario}
 
@@ -3290,7 +3290,7 @@ class ValidarDB(object):
         response['status'] = None
         response['message'] = None
 
-        query = text(f'SELECT {ColumnaIdentificadorUsuario}, {ColumnaEstado} FROM users WHERE {ColumnaIdentificadorUsuario} = :id')
+        query = text(f'SELECT {ColumnaIdentificadorUsuario}, {ColumnaEstado} FROM {Tabla} WHERE {ColumnaIdentificadorUsuario} = :id')
 
         params = {"id": IdentificadorUsuario}
 
@@ -3322,7 +3322,118 @@ class ValidarDB(object):
         else:
             print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
         return response
-        
+
+    def ValidarPermiso(self, IdPermiso: str, ColumnaID: str, ColumnaIdentificador: str, Tabla: str):
+
+        if self.DBConn.closed:
+            self.Initialize()
+
+        if IdPermiso == None or IdPermiso == '':
+            raise Exception('Se debe especificar un valor para el id de permiso')
+        elif '*' in IdPermiso:
+            raise Exception('No es posible definir un comodin para el permiso')
+        elif ColumnaID == None or ColumnaID == '':
+            raise Exception('Se debe especificar un valor para la columna a permiso')
+        elif '*' in ColumnaID:
+            raise Exception('Se debe especificar un valor para la columna a evaluar no es posible un comodin')
+        elif Tabla == None or Tabla == '':
+            raise Exception('Se debe especificar un valor para la tabla a evaluar')
+        elif '*' in Tabla:
+            raise Exception('Se debe especificar un valor para la tabla a evaluar no es posible un comodin')
+        elif ColumnaIdentificador == None or ColumnaIdentificador == '':
+            raise Exception('Se debe especificar un valor para el identificador unico')
+        elif '*' in ColumnaIdentificador:
+            raise Exception('Se debe especificar un valor para el identificador unico no es posible un comodin')
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        query = text(f'SELECT {ColumnaID}, {ColumnaIdentificador} FROM {Tabla} WHERE {ColumnaID} = :id')
+        if ColumnaIdentificador.upper() == ColumnaID.upper():
+            query = text(f'SELECT {ColumnaID} FROM {Tabla} WHERE {ColumnaID} = :id')
+
+        params = {"id": IdPermiso}
+
+        if self.DBDebug:
+            print(f'Query: {query}')
+            print(f'Params: {params}')
+
+        returnInfo =  self.DBConn.execute(query, params)
+
+        response['status'] = f'Failed'
+        response['message'] = f'No fue posible encontrar permiso con el id {IdPermiso} en la columna {ColumnaID}'
+
+        if self.DBDebug:
+            print(f'returnInfo: {returnInfo}')
+
+        for row in returnInfo:
+            rowDict = dict(row._mapping)
+            if rowDict[ColumnaID] == IdPermiso:
+                response['status'] = f'Success'
+                response['message'] = f'Se encuentra el permiso {rowDict[ColumnaID]} en la columna {ColumnaID} y el identificador {rowDict[ColumnaIdentificador]}'
+                response['id'] = rowDict[ColumnaIdentificador]
+                break
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+
+    def ValidarPermisoUsuario(self, IdentificadorUsuario, ColumnaIdentificadorUsuario: str, IdentificadorPermiso, ColumnaIdentificadorPermiso: str, Tabla: str):
+        if self.DBConn.closed:
+            self.Initialize()
+
+        if IdentificadorUsuario == None or IdentificadorUsuario == '':
+            raise Exception('Se debe especificar un valor para el id de usuario')
+        elif ColumnaIdentificadorUsuario == None or ColumnaIdentificadorUsuario == '':
+            raise Exception('Se debe especificar un valor para la columna a permiso')
+        elif '*' in ColumnaIdentificadorUsuario:
+            raise Exception('Se debe especificar un valor para la columna a evaluar no es posible un comodin')
+        elif IdentificadorPermiso == None or IdentificadorPermiso == '':
+            raise Exception('Se debe especificar un valor para el id de permiso')
+        elif ColumnaIdentificadorPermiso == None or ColumnaIdentificadorPermiso == '':
+            raise Exception('Se debe especificar un valor para la columna a permiso')
+        elif '*' in ColumnaIdentificadorPermiso:
+            raise Exception('Se debe especificar un valor para la columna a evaluar no es posible un comodin')
+        elif Tabla == None or Tabla == '':
+            raise Exception('Se debe especificar un valor para la tabla a evaluar')
+        elif '*' in Tabla:
+            raise Exception('Se debe especificar un valor para la tabla a evaluar no es posible un comodin')
+
+        response = {}
+        response['status'] = None
+        response['message'] = None
+
+        query = text(f'SELECT {ColumnaIdentificadorUsuario}, {ColumnaIdentificadorPermiso} FROM {Tabla} WHERE {ColumnaIdentificadorUsuario} = :id and {ColumnaIdentificadorPermiso} = :id2')
+
+        params = { "id": IdentificadorUsuario, "id2" : IdentificadorPermiso }
+
+        if self.DBDebug:
+            print(f'Query: {query}')
+            print(f'Params: {params}')
+
+        returnInfo =  self.DBConn.execute(query, params)
+
+        response['status'] = f'Failed'
+        response['message'] = f'No fue posible encontrar el perfil {IdentificadorPermiso} para el usuario {IdentificadorUsuario}'
+
+        for row in returnInfo:
+            rowDict = dict(row._mapping)
+            if rowDict[ColumnaIdentificadorUsuario] == IdentificadorUsuario and rowDict[ColumnaIdentificadorPermiso] == IdentificadorPermiso:
+                response['status'] = f'Success'
+                response['idUsuario'] = rowDict[ColumnaIdentificadorUsuario]
+                response['idPermiso'] = rowDict[ColumnaIdentificadorPermiso]
+                response['message'] = f'Se encuentra el perfil {IdentificadorPermiso} para el usuario {IdentificadorUsuario}'
+                break
+
+        if response['status'] == 'Success':
+            print(f'{bcolors.OKGREEN}{response['status']}{bcolors.ENDC}: {response['message']}')
+        else:
+            print(f'{bcolors.FAIL}{response['status']}{bcolors.ENDC}: {response['message']}')
+        return response
+
 
 class ValidarIDM(object):
 
