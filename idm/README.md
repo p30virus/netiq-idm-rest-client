@@ -4,11 +4,6 @@
 * Librerias:
   * request (python -m pip install requests)
   * urllib3
-  * ldap3
-  * sqlalchemy
-  * psycopg2
-  * pyodbc
-  * oracledb
 * Recomendados:
   * VSCode
 
